@@ -98,6 +98,23 @@ mesh mesh_primitive_half_sphere(float radius, const vec3& p0, size_t Nu, size_t 
     return shape;
 }
 
+void draw_hierarchy_element(const hierarchy_mesh_drawable& hierarchy, const string& element_name, const camera_scene& camera, int shader = -1)
+{
+    const hierarchy_mesh_drawable_node& node = hierarchy[element_name];
+
+    // copy of the mesh drawable (lightweight element) - to preserve its uniform parameters
+    mesh_drawable visual_element = node.element;
+    const affine_transform& T = node.global_transform;
+
+    // Update local uniform values (and combine them with uniform already stored in the mesh)
+    visual_element.uniform.transform = T * visual_element.uniform.transform;
+
+    if (shader == -1) // Use the shader associated to the current visual_element
+        vcl::draw(visual_element, camera);
+    else // use the shader set in the argument
+        vcl::draw(visual_element, camera, shader);
+} // draw_hierarchy_element(hierarchy, "body", scene.camera);
+
 void scene_model::set_gui()
 {
     ImGui::Text("Display: "); ImGui::SameLine();
