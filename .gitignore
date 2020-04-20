@@ -1,6 +1,6 @@
 # Ignorer les produits de compilation
 .vs/
-out/build/x64-Debug/
+out/build/x64-Debug/*
 
 # Mais pas les textures, a recopier dans un dossier du build pour que pgm.exe les voie
-!out/build/x64-Debug/scenes/shared_assets/
+!out/build/x64-Debug/scenes/
