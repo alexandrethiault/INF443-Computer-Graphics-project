@@ -1,68 +1,31 @@
 
 #include "articulated_hierarchy.hpp"
+#include <string>
+#include <algorithm>
 
-// AVANCEMENT : ben en gros on a mon code du TD là donc c'est un oiseau pour l'instant.
-// convention : axe z = vertical, axe x = direction du regard par défaut !
+// AVANCEMENT : juste un squelette pour avoir un code qui suit vaguement la forme des chomp_xxx.cpp
 
 #ifdef SCENE_ARTICULATED_HIERARCHY
 
 using namespace vcl;
 
-void scene_model::setup_data(std::map<std::string,GLuint>& shaders, scene_structure& scene, gui_structure& )
+const std::string mario_dir = "scenes/shared_assets/textures/mario/";
+const float PI = 3.14159f;
+
+void scene_model::setup_data(std::map<std::string, GLuint>& shaders, scene_structure& scene, gui_structure&)
 {
     scene.camera.camera_type = camera_control_spherical_coordinates;
     scene.camera.scale = 30.0f;
     scene.camera.apply_rotation(0, 0, 0, 1.2f);
 
-    const float radius_body = 0.25f;
-    const float radius_head = 0.2f;
-    const float length_arm = 0.2f;
-    const float breadth_arm = length_arm * 1.2f;
+    demo_ground = mesh_primitive_disc(20);
+    demo_ground.uniform.color = { 1,1,0.5f };
 
-    // The geometry of the body is a sphere
-    mesh_drawable body = mesh_drawable( mesh_primitive_sphere(radius_body, {0,0,0}, 40, 40));
-    body.uniform.transform.scaling_axis = vec3(2, 1, 1);
-    body.uniform.shading.specular = 20.0f;
-    mesh_drawable head = mesh_drawable(mesh_primitive_sphere(radius_head, {0,0,0}, 40, 40));
-    head.uniform.shading.specular = 20.0f;
-
-    // Geometry of the eyes: black spheres
-    mesh_drawable eye = mesh_drawable(mesh_primitive_sphere(0.04f, {0,0,0}, 20, 20));
-    eye.uniform.color = {0,0,0};
-
-    mesh_drawable nose = mesh_drawable(mesh_primitive_cone(radius_head * 0.4f, { 0,0,0 }, { 0.2f,0,0 }, 20, 10));
-    nose.uniform.color = { 1, 0.5f, 0 };
-
-    // Shoulder part and arm are displayed as cylinder
-    //mesh_drawable shoulder = mesh_primitive_cylinder(radius_arm, {0,0,0}, {-length_arm,0,0});
-    //mesh_drawable arm = mesh_primitive_cylinder(radius_arm, {0,0,0}, {-length_arm/1.5f,-length_arm/1.0f,0});
-    mesh_drawable feather_1 = mesh_primitive_quad({ breadth_arm, 0, 0 }, { -breadth_arm, 0, 0 }, { -breadth_arm, -length_arm, 0 }, { breadth_arm, -length_arm, 0 });
-    mesh_drawable feather_2 = mesh_primitive_quad({ breadth_arm, 0, 0 }, { -breadth_arm, 0, 0 }, { 0, -length_arm, 0 }, { length_arm , -length_arm, 0 });
-
-    // Build the hierarchy:
-    // hierarchy.add(visual_element, element_name, parent_name, (opt)[translation, rotation])
-    hierarchy.add(body, "body");
-
-    hierarchy.add(head, "head", "body", radius_body * vec3(2, 0, 1));
-
-    // Eyes positions are set with respect to some ratio of the
-    hierarchy.add(eye, "eye_left", "head" , radius_head * vec3(2 / 3.0f, 1/3.0f, 1/2.0f));
-    hierarchy.add(eye, "eye_right", "head", radius_head * vec3(2 / 3.0f , -1/3.0f, 1/2.0f));
-    hierarchy.add(nose, "nose", "head", radius_head * vec3(0.9f, 0, 0));
-
-    hierarchy.add(feather_1, "f1_left", "body", { 0,-radius_body + 0.05f,0 }); // extremity of the spherical body
-    hierarchy.add(feather_2, "f2_left", "f1_left", { 0,-length_arm,0 });     // place the elbow the extremity of the "shoulder cylinder"
-    hierarchy.add(feather_1, "f1_right", "body", { {0,radius_body - 0.05f,0}, {1,0,0, 0,-1,0, 0,0,1} });
-    hierarchy.add(feather_2, "f2_right", "f1_right", { 0,-length_arm,0 });
-
-    // Set the same shader for all the elements
-    hierarchy.set_shader_for_all_elements(shaders["mesh"]);
-
-    // Initialize helper structure to display the hierarchy skeleton
-    hierarchy_visual_debug.init(shaders["segment_im"], shaders["mesh"]);
+    character.init({ 0,0,0 });
+    character.hierarchy.set_shader_for_all_elements(shaders["mesh"]);
 
     timer.scale = 1.0f;
-    timer.t_max = 5.0f;
+    timer.t_max = 10.0f;
 }
 
 void scene_model::frame_draw(std::map<std::string,GLuint>& shaders, scene_structure& scene, gui_structure& )
@@ -71,28 +34,112 @@ void scene_model::frame_draw(std::map<std::string,GLuint>& shaders, scene_struct
     timer.update();
     const float t = timer.t;
 
-    // Rotation of the shoulder around the y axis
-    mat3 const R_face = rotation_from_axis_angle_mat3({ 0,1,0 }, 0.2f + 0.1f*std::sin(2 * 3.14f * t));
-    // Rotation of the shoulder around the y axis
-    mat3 const R_feather1 = rotation_from_axis_angle_mat3({1,0,0}, std::sin(4 * 3.14f*(t-0.4f)) );
-    // Rotation of the arm around the y axis (delayed with respect to the shoulder)
-    mat3 const R_feather2 = rotation_from_axis_angle_mat3({1,0,0}, std::sin(4 * 3.14f*(t-0.6f)) );
-    // Symmetry in the x-direction between the left/right parts
-    mat3 const Symmetry = {1,0,0, 0,-1,0, 0,0,1};
+    draw(demo_ground, scene.camera, shaders["mesh"]);
 
-    // Set the rotation to the elements in the hierarchy
-    hierarchy["head"].transform.rotation = R_face;
-    hierarchy["f1_left"].transform.rotation = R_feather1;
-    hierarchy["f2_left"].transform.rotation = R_feather2;
+    character.move(t, ((t < last_t) ? timer.t_max - timer.t_min : 0) + t - last_t);
 
-    hierarchy["f1_right"].transform.rotation = Symmetry * R_feather1; // apply the symmetry
-    hierarchy["f2_right"].transform.rotation = R_feather2; //note that the symmetry is already applied by the parent element
+    character.draw_nobillboards(shaders, scene, gui_scene.surface, gui_scene.wireframe);
+
+    //// BILLBOARDS ALWAYS LAST ////
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDepthMask(false);
+    character.draw_billboards(shaders, scene, gui_scene.billboards, gui_scene.wireframe);
+    glBindTexture(GL_TEXTURE_2D, scene.texture_white);
+    glDepthMask(true);
+
+    last_t = t;
+}
+
+void character_structure::init(const vec3& center)
+{
+    // initialisation de tous les champs de character_structure, notamment construire la hiérarchie et load les textures
+    // par convention, z est la verticale et à l'initialisation on fait regarder vers x 
+    // le personnage doit avoir une taille cohérente avec le rayon du chomp qui est 3.
+    if (false) {
+        std::cout << "Tentative de re-initialiser un mario deja initialise." << std::endl;
+        return;
+    }
+
+    texture_exemple = create_texture_gpu(image_load_png(mario_dir + "exemple.png"));
+}
+
+void character_structure::draw_nobillboards(std::map<std::string, GLuint>& shaders, scene_structure& scene, bool surf, bool wf)
+{
+    // dessiner toutes les parties qui ne sont pas des billboards
+    // copié collé de ce que j'ai fait pour le chomp
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); // avoids sampling artifacts
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE); // avoids sampling artifacts
+
+    glBindTexture(GL_TEXTURE_2D, texture_up);
+    if (surf) draw_hierarchy_element(hierarchy["body_up"], scene.camera, shaders["mesh"]);
+    if (wf) draw_hierarchy_element(hierarchy["body_up"], scene.camera, shaders["wireframe"]);
+
+    glBindTexture(GL_TEXTURE_2D, texture_down);
+    if (surf) draw_hierarchy_element(hierarchy["body_down"], scene.camera, shaders["mesh"]);
+    if (wf) draw_hierarchy_element(hierarchy["body_down"], scene.camera, shaders["wireframe"]);
+
+    glBindTexture(GL_TEXTURE_2D, texture_tongue);
+    if (surf) draw_hierarchy_element(hierarchy["mouth_up"], scene.camera, shaders["mesh"]);
+    if (wf) draw_hierarchy_element(hierarchy["mouth_up"], scene.camera, shaders["wireframe"]);
+    if (surf) draw_hierarchy_element(hierarchy["mouth_down"], scene.camera, shaders["mesh"]);
+    if (wf) draw_hierarchy_element(hierarchy["mouth_down"], scene.camera, shaders["wireframe"]);
+
+    glBindTexture(GL_TEXTURE_2D, texture_tooth);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT); // avoids sampling artifacts
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT); // avoids sampling artifacts
+    for (int i = 1; i <= 8; i++) {
+        if (surf) draw_hierarchy_element(hierarchy["tooth_up_" + str(i)], scene.camera, shaders["mesh"]);
+        if (wf) draw_hierarchy_element(hierarchy["tooth_up_" + str(i)], scene.camera, shaders["wireframe"]);
+        if (surf) draw_hierarchy_element(hierarchy["tooth_down_" + str(i)], scene.camera, shaders["mesh"]);
+        if (wf) draw_hierarchy_element(hierarchy["tooth_down_" + str(i)], scene.camera, shaders["wireframe"]);
+    }
+
+    glBindTexture(GL_TEXTURE_2D, scene.texture_white);
+}
+
+bool cmpbillboard(vec3& u, vec3& v, vec3& cam_pos)
+{
+    float norm_u = norm(u - cam_pos);
+    float norm_v = norm(v - cam_pos);
+    return (norm_u > norm_v);
+}
+
+void character_structure::draw_billboards(std::map<std::string, GLuint>& shaders, scene_structure& scene, bool bb, bool wf)
+{
+    // Cette fonction est à part parce que les billboards doivent être tracés à la fin
+    // copié collé de ce que j'ai fait pour le chomp
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); // avoids sampling artifacts
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE); // avoids sampling artifacts
+    glBindTexture(GL_TEXTURE_2D, texture_eye);
+    if (bb) draw_hierarchy_element(hierarchy["eye_left"], scene.camera, shaders["mesh"]);
+    if (wf) draw_hierarchy_element(hierarchy["eye_left"], scene.camera, shaders["wireframe"]);
+    if (bb) draw_hierarchy_element(hierarchy["eye_right"], scene.camera, shaders["mesh"]);
+    if (wf) draw_hierarchy_element(hierarchy["eye_right"], scene.camera, shaders["wireframe"]);
+
+    glBindTexture(GL_TEXTURE_2D, texture_chain);
+    buffer<vec3> chains = { chain1, chain2, chain3, chain4 }; // à trier par distance à la caméra
+    std::sort(chains.begin(), chains.end(),
+        [&scene](auto u, auto v) -> bool {return cmpbillboard(u, v, scene.camera.camera_position()); });
+    chain.uniform.transform.rotation = scene.camera.orientation;
+    for (vec3 pos : chains) {
+        chain.uniform.transform.translation = pos + vec3{ 0,0,1 };
+        if (bb) draw(chain, scene.camera, shaders["mesh"]);
+        if (wf) draw(chain, scene.camera, shaders["wireframe"]);
+    }
+    glBindTexture(GL_TEXTURE_2D, scene.texture_white);
+}
+
+void character_structure::move(float t, float dt)
+{
+    // fonction où on décide du mouvement (en fonction de t, dt, input ?)
+    // peut-être à faire seulement dans interpolation_position.cpp
+    if (dt > 0.1f) dt = 0.1f;
 
     hierarchy.update_local_to_global_coordinates();
-
-    if(gui_scene.surface) draw(hierarchy, scene.camera);
-    if(gui_scene.wireframe) draw(hierarchy, scene.camera, shaders["wireframe"]);
-    if(gui_scene.skeleton) hierarchy_visual_debug.draw(hierarchy, scene.camera);
 }
 
 void scene_model::set_gui()

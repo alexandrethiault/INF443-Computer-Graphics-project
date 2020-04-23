@@ -2,15 +2,13 @@
 #include "chomp_hierarchy.hpp"
 #include <string>
 
-// AVANCEMENT : Le chomp n'a pas de dents ni de palais/langue (textures spécifiques à appliquer, faire des
-// demi disques pas des disques entiers pour la bouche. Les dents sont un peu en retrait dans la boule)
-
-const std::string chomp_dir = "scenes/shared_assets/textures/chomp/";
+// AVANCEMENT : fini
 
 #ifdef SCENE_CHOMP_HIERARCHY
 
 using namespace vcl;
 
+const std::string chomp_dir = "scenes/shared_assets/textures/chomp/";
 const float PI = 3.14159f;
 
 void scene_model::setup_data(std::map<std::string, GLuint>& shaders, scene_structure& scene, gui_structure&)
@@ -201,17 +199,21 @@ void chomp_structure::draw_nobillboards(std::map<std::string, GLuint>& shaders, 
 {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); // avoids sampling artifacts
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE); // avoids sampling artifacts
+
     glBindTexture(GL_TEXTURE_2D, texture_up);
     if (surf) draw_hierarchy_element(hierarchy["body_up"], scene.camera, shaders["mesh"]);
     if (wf) draw_hierarchy_element(hierarchy["body_up"], scene.camera, shaders["wireframe"]);
+
     glBindTexture(GL_TEXTURE_2D, texture_down);
     if (surf) draw_hierarchy_element(hierarchy["body_down"], scene.camera, shaders["mesh"]);
     if (wf) draw_hierarchy_element(hierarchy["body_down"], scene.camera, shaders["wireframe"]);
+
     glBindTexture(GL_TEXTURE_2D, texture_tongue);
     if (surf) draw_hierarchy_element(hierarchy["mouth_up"], scene.camera, shaders["mesh"]);
     if (wf) draw_hierarchy_element(hierarchy["mouth_up"], scene.camera, shaders["wireframe"]);
     if (surf) draw_hierarchy_element(hierarchy["mouth_down"], scene.camera, shaders["mesh"]);
     if (wf) draw_hierarchy_element(hierarchy["mouth_down"], scene.camera, shaders["wireframe"]);
+
     glBindTexture(GL_TEXTURE_2D, texture_tooth);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT); // avoids sampling artifacts
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT); // avoids sampling artifacts
@@ -221,6 +223,7 @@ void chomp_structure::draw_nobillboards(std::map<std::string, GLuint>& shaders, 
         if (surf) draw_hierarchy_element(hierarchy["tooth_down_" + str(i)], scene.camera, shaders["mesh"]);
         if (wf) draw_hierarchy_element(hierarchy["tooth_down_" + str(i)], scene.camera, shaders["wireframe"]);
     }
+
     glBindTexture(GL_TEXTURE_2D, scene.texture_white);
 }
 
