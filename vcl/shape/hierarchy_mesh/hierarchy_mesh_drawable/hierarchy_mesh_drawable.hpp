@@ -61,5 +61,6 @@ struct hierarchy_mesh_drawable
       - shader != -1 force the use of this shader for all elements
 */
 void draw(const hierarchy_mesh_drawable& hierarchy, const camera_scene& camera, int shader=-1);
+void draw_hierarchy_element(const hierarchy_mesh_drawable_node& node, const camera_scene& camera, int shader=-1);
 
 }

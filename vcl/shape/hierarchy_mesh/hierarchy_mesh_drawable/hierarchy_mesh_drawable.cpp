@@ -116,21 +116,22 @@ void draw(const hierarchy_mesh_drawable& hierarchy, const camera_scene& camera, 
 {
     const size_t N = hierarchy.elements.size();
     for(size_t k=0; k<N; ++k)
-    {
-        const hierarchy_mesh_drawable_node& node = hierarchy.elements[k];
+        draw_hierarchy_element(hierarchy.elements[k], camera, shader);
+}
 
-        // copy of the mesh drawable (lightweight element) - to preserve its uniform parameters
-        mesh_drawable visual_element = node.element;
-        const affine_transform& T = node.global_transform;
+void draw_hierarchy_element(const hierarchy_mesh_drawable_node& node, const camera_scene& camera, int shader)
+{
+    // copy of the mesh drawable (lightweight element) - to preserve its uniform parameters
+    mesh_drawable visual_element = node.element;
+    const affine_transform& T = node.global_transform;
 
-        // Update local uniform values (and combine them with uniform already stored in the mesh)
-        visual_element.uniform.transform = T * visual_element.uniform.transform;
+    // Update local uniform values (and combine them with uniform already stored in the mesh)
+    visual_element.uniform.transform = T * visual_element.uniform.transform;
 
-        if(shader==-1) // Use the shader associated to the current visual_element
-            vcl::draw(visual_element, camera);
-        else // use the shader set in the argument
-            vcl::draw(visual_element, camera, shader);
-    }
+    if (shader == -1) // Use the shader associated to the current visual_element
+        vcl::draw(visual_element, camera);
+    else // use the shader set in the argument
+        vcl::draw(visual_element, camera, shader);
 }
 
 void assert_valid_hierarchy(const hierarchy_mesh_drawable& hierarchy)
