@@ -1,5 +1,7 @@
 # Ignorer les produits de compilation
 .vs/
+#.vscode/
+#imgui.ini
 out/build/x64-Debug/*
 
 # Mais pas les textures, a recopier dans un dossier du build pour que pgm.exe les voie

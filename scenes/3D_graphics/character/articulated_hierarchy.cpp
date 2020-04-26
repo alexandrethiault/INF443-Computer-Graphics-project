@@ -25,6 +25,7 @@ void scene_model::setup_data(std::map<std::string, GLuint>& shaders, scene_struc
 
     demo_ground = mesh_primitive_disc(20);
     demo_ground.uniform.color = { 1,1,0.5f };
+    demo_ground.uniform.shading = { 1,0,0 };
 
     //character.init({ 0,0,0 });
     //character.hierarchy.set_shader_for_all_elements(shaders["mesh"]);
