@@ -19,14 +19,14 @@ std::uniform_real_distribution<float> distrib(0.0, 1.0);
 void scene_model::setup_data(std::map<std::string, GLuint>& shaders, scene_structure& scene, gui_structure&)
 {
     scene.camera.camera_type = camera_control_spherical_coordinates;
-    scene.camera.scale = 30.0f;
+    scene.camera.scale = 5.0f;
     scene.camera.apply_rotation(0, 0, 0, 1.2f);
 
-    demo_ground = mesh_primitive_disc(20);
+    demo_ground = mesh_primitive_disc(4);
     demo_ground.uniform.color = { 1,1,0.5f };
     demo_ground.uniform.shading = { 1,0,0 };
 
-    character = mesh_primitive_sphere(0.4f);
+    character = mesh_primitive_sphere(0.03f);
     character.uniform.color = { 0,0,0 };
 
     chomp.init({ 0,0,0 });
@@ -43,7 +43,7 @@ void scene_model::frame_draw(std::map<std::string, GLuint>& shaders, scene_struc
 
     draw(demo_ground, scene.camera, shaders["mesh"]);
 
-    char_pos = { 5, 5*(t - 10), 2 };
+    char_pos = { 0.4f, 0.4f*(t - 10), 0.15f };
     character.uniform.transform.translation = char_pos;
     draw(character, scene.camera, shaders["mesh"]);
 
@@ -135,10 +135,11 @@ void chomp_structure::init(const vec3& _center)
         std::cout << "Tentative de re-initialiser un chomp deja initialise." << std::endl;
         return;
     }
-    radius_chomp = 3.0f;
-    radius_reach = 9.0f;
+    radius_chomp = 0.25f;
+    radius_reach = radius_chomp * 3.0f;
+    radius_eye = radius_chomp / 5.0f;
     max_angular_velocity = PI / 4;
-    max_speed = 1.0f;
+    max_speed = radius_chomp / 3.0f;
     center = _center;
     rel_position = rush_speed = chain1 = chain2 = chain3 = chain4 = { 0,0,0 };
     angle = angular_v = speed = time_chasing = 0.0f;
@@ -146,13 +147,16 @@ void chomp_structure::init(const vec3& _center)
 
     mesh_drawable body = mesh_primitive_half_sphere(radius_chomp, { 0,0,0 }, 9, 5);
     body.uniform.shading = { 1,0,0 };
-    mesh_drawable eye = mesh_primitive_quad({ 0.0f,-0.6f,-0.6f }, { 0.0f,0.6f,-0.6f }, { 0.0f,0.6f,0.6f }, { 0.0f,-0.6f,0.6f });
+    mesh_drawable eye = mesh_primitive_quad({ 0,-1,-1 }, { 0,1,-1 }, { 0,1,1 }, { 0,-1,1 });
+    eye.uniform.transform.scaling = radius_eye;
     eye.uniform.shading = { 1,0,0 };
     mesh_drawable mouth = mesh_primitive_half_disc(radius_chomp, { 0,0,0 }, { 1,0,0 }, { 0,1,0 }, 5);
     mouth.uniform.shading = { 1,0,0 };
     mesh_drawable tooth = mesh_tooth({ 0,0.5f,0 }, { 0,-0.5f,0 }, { -0.25f,0,-0.88f });
+    tooth.uniform.transform.scaling = radius_chomp / 3.0f;
     tooth.uniform.shading = { 1,0,0 };
     chain = mesh_primitive_quad({ -0.5f,0.5f,0.0f }, { 0.5f,0.5f,0.0f }, { 0.5f,-0.5f,0.0f }, { -0.5f,-0.5f,0.0 });
+    chain.uniform.transform.scaling = radius_chomp / 3.0f;
     chain.uniform.shading = { 1,0,0 };
 
     hierarchy.add(body, "body_up");
@@ -181,6 +185,8 @@ void chomp_structure::init(const vec3& _center)
     hierarchy.add(tooth, "tooth_up_7", "body_up", { (1 * head_p2 + 6 * head_p1) / 7,  0.63f * rotation_from_axis_angle_mat3({0,0,1},3 * PI / 8) });
     hierarchy.add(tooth, "tooth_up_8", "body_up", { (2 * head_p2 + 3 * head_p1) / 5,  0.48f * rotation_from_axis_angle_mat3({0,0,1},3 * PI / 8) });
     tooth = mesh_tooth({ -0.3f,0,-0.88f }, { 0,0.5f,0 }, { 0,-0.5f,0 }); // cyclic rotation of texture_uv coordinates
+    tooth.uniform.transform.scaling = radius_chomp / 3.0f;
+    tooth.uniform.shading = { 1,0,0 };
     hierarchy.add(tooth, "tooth_down_1", "body_down", { (3 * head_m1 + 7 * head_0) / 10,  1.36f * rotation_from_axis_angle_mat3({0,0,1},-PI / 8) });
     hierarchy.add(tooth, "tooth_down_2", "body_down", { (8 * head_m1 + 2 * head_0) / 10,  0.88f * rotation_from_axis_angle_mat3({0,0,1},-PI / 8) });
     hierarchy.add(tooth, "tooth_down_3", "body_down", { (1 * head_m2 + 6 * head_m1) / 7,  0.63f * rotation_from_axis_angle_mat3({0,0,1},-3 * PI / 8) });
@@ -230,7 +236,7 @@ bool cmpbillboard(const vec3& u, const vec3& v, const vec3& cam_pos) { return (n
 
 void chomp_structure::draw_billboards(std::map<std::string, GLuint>& shaders, scene_structure& scene, bool bb, bool wf)
 {
-    glBindTexture(GL_TEXTURE_2D, texture_eye);
+    glBindTexture(GL_TEXTURE_2D, texture_eye); // Eyes first: a chain will always be in front of an eye OR invisible
     if (bb) draw_hierarchy_element(hierarchy["eye_left"], scene.camera, shaders["mesh"]);
     if (wf) draw_hierarchy_element(hierarchy["eye_left"], scene.camera, shaders["wireframe"]);
     if (bb) draw_hierarchy_element(hierarchy["eye_right"], scene.camera, shaders["mesh"]);
@@ -239,10 +245,10 @@ void chomp_structure::draw_billboards(std::map<std::string, GLuint>& shaders, sc
     glBindTexture(GL_TEXTURE_2D, texture_chain);
     buffer<vec3> chains = { chain1, chain2, chain3, chain4 };
     std::sort(chains.begin(), chains.end(),
-        [&scene](auto u, auto v) -> bool {return cmpbillboard(u, v, scene.camera.camera_position()); });
+        [&](const vec3& u, const vec3& v) {return cmpbillboard(u, v, scene.camera.camera_position()); });
     chain.uniform.transform.rotation = scene.camera.orientation;
     for (vec3 pos : chains) {
-        chain.uniform.transform.translation = pos + vec3{ 0,0,1 };
+        chain.uniform.transform.translation = pos + vec3{ 0,0,radius_chomp / 3.0f };
         if (bb) draw(chain, scene.camera, shaders["mesh"]);
         if (wf) draw(chain, scene.camera, shaders["wireframe"]);
     }
@@ -273,7 +279,7 @@ void chomp_structure::move(const vcl::vec3& char_pos, float t, float dt)
     else if (falling) { // Finish falling before attacking again 
         R_jaw = rotation_from_axis_angle_mat3({ 0,1,0 }, -0.6f);
         time_chasing += dt;
-        if (time_chasing > 1) speed += -30 * dt; // g = 30
+        if (time_chasing > 1) speed += -2.5f * dt; // g = 2.5
         rel_position += {0, 0, speed * dt};
         if (rel_position.z < center.z) {
             falling = false;

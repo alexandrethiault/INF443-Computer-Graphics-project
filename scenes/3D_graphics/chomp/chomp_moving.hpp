@@ -13,13 +13,13 @@ struct gui_scene_structure
 
 struct chomp_structure
 {
-    float radius_chomp = 0., radius_reach, angle, angular_v, max_angular_velocity, speed, max_speed;
+    float radius_chomp = 0., radius_reach, radius_eye, angle, angular_v, max_angular_velocity, speed, max_speed;
     vcl::vec3 center, rel_position, chain1, chain2, chain3, chain4;
     vcl::hierarchy_mesh_drawable hierarchy;
     vcl::mesh_drawable chain;
     GLuint texture_up, texture_down, texture_tongue, texture_eye, texture_tooth, texture_chain;
 
-    void init(const vcl::vec3& center);
+    void init(const vcl::vec3& _center);
     void draw_nobillboards(std::map<std::string, GLuint>& shaders, scene_structure& scene, bool surf, bool wf);
     void draw_billboards(std::map<std::string, GLuint>& shaders, scene_structure& scene, bool bb, bool wf);
     void move(float t, float dt);
