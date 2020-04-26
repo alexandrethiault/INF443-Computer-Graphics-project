@@ -35,14 +35,14 @@ void scene_model::setup_data(std::map<std::string,GLuint>& shaders, scene_struct
     texture_sky = create_texture_gpu(image_load_png(textures_dir + "skybox.png"));
 
     // Create a quad for billboards
-    demo_chomp = mesh_primitive_sphere(); // carré de côté 1 centré en 0
+    demo_chomp = mesh_primitive_sphere(); // carrï¿½ de cï¿½tï¿½ 1 centrï¿½ en 0
     demo_chomp.uniform.color = { 0,0,0 };
     demo_chomp.uniform.transform.translation = { -2,0,1 };
     demo_chomp.uniform.transform.scaling = 0.25f;
     demo_chomp.uniform.shading = { 1,0,0 };
 
-    loadMTL("scenes/shared_assets/models/Bob-omb Battlefield.mtl", map_mtl, map_textures);
-    loadOBJ("scenes/shared_assets/models/Bob-omb Battlefield.obj", map, texture_indices, map_mtl);
+    loadMTL("scenes/shared_assets/models/Bob-omb/Bob-omb Battlefield.mtl", map_mtl, map_textures);
+    loadOBJ("scenes/shared_assets/models/Bob-omb/Bob-omb Battlefield.obj", map, texture_indices, map_mtl);
 
     timer.scale = 1.0f;
 }

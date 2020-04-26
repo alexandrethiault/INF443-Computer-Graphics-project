@@ -9,11 +9,19 @@ struct gui_scene_structure
     bool wireframe   = false;
     bool surface     = true;
     bool skeleton    = false;
+    bool billboards = true;
+};
+
+struct mtltexture {
+    float Ns, Ni, d;
+    vcl::vec3 Ka, Kd, Ks, Ke;
+    int illum;
+    std::string name, map_Kd;
 };
 
 struct character_structure
 {
-    // prérempli avec ce que j'ai pris pour le chomp
+    // prï¿½rempli avec ce que j'ai pris pour le chomp
     float radius_chomp = 0., radius_reach, angle, angular_v, max_angular_velocity, speed, max_speed;
     vcl::vec3 center, rel_position;
     vcl::hierarchy_mesh_drawable hierarchy;
@@ -37,8 +45,14 @@ struct scene_model : scene_base
 
     vcl::mesh_drawable demo_ground;
 
+    std::vector<vcl::mesh_drawable> map;
+    std::vector<mtltexture> map_mtl;
+    std::vector<int> texture_indices;
+    std::vector<GLuint> map_textures;
+
     gui_scene_structure gui_scene;
     vcl::timer_interval timer;
+    float last_t;
 };
 
 #endif
