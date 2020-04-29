@@ -14,15 +14,17 @@ void scene_model::setup_data(std::map<std::string,GLuint>& shaders, scene_struct
     scene.camera.camera_type = camera_control_spherical_coordinates;
     scene.camera.scale = 20.0f;
     scene.camera.apply_rotation(0,0,2,1.2f);
-    
-    map.create_sky(); // Skybox   
 
     char_pos = { 100,100,100 }; // tant qu'on n'a pas un vrai Mario
 
-    chomp.init({ -2.65f,0.2f,0.77f }); // Position of the bottom of the Chomp
+    chomp.init({ -2.545635f, 0.232917f, 0.782936f }); // Position of the bottom of the Chomp
 
     map.loadMTL("scenes/shared_assets/models/Bob-omb/Bob-omb Battlefield.mtl");
     map.loadOBJ("scenes/shared_assets/models/Bob-omb/Bob-omb Battlefield.obj");
+    map.create_sky(); // Skybox  
+    map.other_objects();
+
+    star.create_star();
 
     timer.scale = 1.0f;
     timer.t_max = 20.0f;
@@ -35,41 +37,24 @@ void scene_model::frame_draw(std::map<std::string, GLuint>& shaders, scene_struc
     const float dt = std::min(0.03f, timer_event.update());
     set_gui();
 
+    chomp.move(char_pos, t, ((t < last_t) ? timer.t_max - timer.t_min : 0) + t - last_t);
+    star.move(t);
+
     glEnable(GL_POLYGON_OFFSET_FILL); // avoids z-fighting when displaying wireframe
 
-    chomp.move(char_pos, t, ((t < last_t) ? timer.t_max - timer.t_min : 0) + t - last_t);
-
     chomp.draw_nobillboards(shaders, scene, gui_scene.surface, gui_scene.wireframe);
-
-    // Display sky
-    glBindTexture(GL_TEXTURE_2D, map.texture_sky);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    map.sky.uniform.transform.translation = scene.camera.camera_position(); // Move sky around camera
-    draw(map.sky, scene.camera, shaders["mesh"]);
-    if (gui_scene.wireframe) draw(map.sky, scene.camera, shaders["wireframe"]);
-
-    // Bob omb battlefield map
-    for (int i = 2; i < (int)map.map.size(); i++) { // 0 and 1 are billboards
-        glBindTexture(GL_TEXTURE_2D, map.map_textures[map.texture_indices[i]]);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-        if (gui_scene.surface) draw(map.map[i], scene.camera, shaders["mesh"]);
-        if (gui_scene.wireframe) draw(map.map[i], scene.camera, shaders["wireframe"]);
-    }
+    map.draw_nobillboards(shaders, scene, gui_scene.surface, gui_scene.wireframe); // Including sky and 17 trees
+    star.draw_nobillboards(shaders, scene, gui_scene.surface, gui_scene.wireframe); // 2 stars
 
     //// BILLBOARDS ALWAYS LAST ////
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glDepthMask(false);
-    for (int i = 0; i < 2; i++) {
-        glBindTexture(GL_TEXTURE_2D, map.map_textures[map.texture_indices[i]]);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-        if (gui_scene.surface) draw(map.map[i], scene.camera, shaders["mesh"]);
-        if (gui_scene.wireframe) draw(map.map[i], scene.camera, shaders["wireframe"]);
-    }
-    chomp.draw_billboards(shaders, scene, gui_scene.billboards, gui_scene.wireframe);
+    // étoiles puis grille du chomp puis chomp (chaine) puis reste de la map (arbres, pièces)
+    star.draw_billboards(shaders, scene, gui_scene.surface, gui_scene.wireframe); // Star eyes
+    chomp.draw_billboards(shaders, scene, gui_scene.billboards, gui_scene.wireframe); // Eyes and chains
+    map.draw_billboards(shaders, scene, gui_scene.billboards, gui_scene.wireframe); // 2 types of grids
     glDepthMask(true);
     glBindTexture(GL_TEXTURE_2D, scene.texture_white);
 
@@ -128,6 +113,14 @@ void scene_model::mouse_move(scene_structure& scene, GLFWwindow* window)
         equalize_speed(keyframes, timer);
     }
 }*/
+
+void scene_model::keyboard_input(scene_structure& scene, GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+    if (key == GLFW_KEY_P && action == GLFW_PRESS) {
+        vec3& pos = scene.frame_camera.uniform.transform.translation;
+        std::cout << "vec3{ " << pos.x << "f," << pos.y << "f," << pos.z << "f } " << pos << std::endl;
+    }
+}
 
 void scene_model::set_gui()
 {

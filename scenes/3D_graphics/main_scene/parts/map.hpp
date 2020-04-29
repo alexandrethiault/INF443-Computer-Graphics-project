@@ -12,9 +12,11 @@ struct mtltexture {
 };
 
 struct map_structure {
-    vcl::mesh_drawable sky;
-    GLuint texture_sky;
+    vcl::mesh_drawable sky, post, post_top, billboard, shadow;
+    GLuint texture_sky, texture_post, texture_post_top, texture_tree;
+    std::vector<vcl::vec3> post_positions, tree_positions;
     void create_sky();
+    void other_objects();
 
     std::vector<vcl::mesh_drawable> map;
     std::vector<mtltexture> map_mtl;
@@ -22,6 +24,8 @@ struct map_structure {
     std::vector<GLuint> map_textures;
     void loadMTL(const char* path);
     void loadOBJ(const char* path);
+    void draw_nobillboards(std::map<std::string, GLuint>& shaders, scene_structure& scene, bool surf, bool wf);
+    void draw_billboards(std::map<std::string, GLuint>& shaders, scene_structure& scene, bool bb, bool wf);
 };
 
 

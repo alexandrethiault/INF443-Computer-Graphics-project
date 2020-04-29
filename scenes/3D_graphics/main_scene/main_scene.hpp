@@ -3,6 +3,7 @@
 #include "main/scene_base/base.hpp"
 #include "scenes/3D_graphics/main_scene/parts/chomp.hpp"
 #include "scenes/3D_graphics/main_scene/parts/map.hpp"
+#include "scenes/3D_graphics/main_scene/parts/star.hpp"
 
 #ifdef MAIN_SCENE
 
@@ -19,6 +20,7 @@ struct scene_model : scene_base
     void frame_draw(std::map<std::string,GLuint>& shaders, scene_structure& scene, gui_structure& gui);
     //void mouse_click(scene_structure& scene, GLFWwindow* window, int button, int action, int mods);
     //void mouse_move(scene_structure& scene, GLFWwindow* window);
+    void keyboard_input(scene_structure& scene, GLFWwindow* window, int key, int scancode, int action, int mods);
     void set_gui();
     
     vcl::vec3 char_pos; // Position du Mario, utilisé par le Chomp
@@ -26,6 +28,8 @@ struct scene_model : scene_base
     chomp_structure chomp;
 
     map_structure map;
+
+    star_structure star;
 
     gui_scene_structure gui_scene;
 
