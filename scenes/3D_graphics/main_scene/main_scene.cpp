@@ -43,7 +43,11 @@ void scene_model::frame_draw(std::map<std::string, GLuint>& shaders, scene_struc
     glEnable(GL_POLYGON_OFFSET_FILL); // avoids z-fighting when displaying wireframe
 
     chomp.draw_nobillboards(shaders, scene, gui_scene.surface, gui_scene.wireframe);
+<<<<<<< HEAD
     map.draw_nobillboards(shaders, scene, gui_scene.surface, gui_scene.wireframe); // Including sky and 5 posts
+=======
+    map.draw_nobillboards(shaders, scene, gui_scene.surface, gui_scene.wireframe); // Including sky and 17 trees
+>>>>>>> 551adaffd8777e4fd469caf9083ba3099121d90b
     star.draw_nobillboards(shaders, scene, gui_scene.surface, gui_scene.wireframe); // 2 stars
 
     //// BILLBOARDS ALWAYS LAST ////
@@ -54,7 +58,11 @@ void scene_model::frame_draw(std::map<std::string, GLuint>& shaders, scene_struc
     // étoiles puis grille du chomp puis chomp (chaine) puis reste de la map (arbres, pièces)
     star.draw_billboards(shaders, scene, gui_scene.surface, gui_scene.wireframe); // Star eyes
     chomp.draw_billboards(shaders, scene, gui_scene.billboards, gui_scene.wireframe); // Eyes and chains
+<<<<<<< HEAD
     map.draw_billboards(shaders, scene, gui_scene.billboards, gui_scene.wireframe); // 2 types of grids and 17 trees
+=======
+    map.draw_billboards(shaders, scene, gui_scene.billboards, gui_scene.wireframe); // 2 types of grids
+>>>>>>> 551adaffd8777e4fd469caf9083ba3099121d90b
     glDepthMask(true);
     glBindTexture(GL_TEXTURE_2D, scene.texture_white);
 
