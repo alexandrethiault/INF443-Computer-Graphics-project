@@ -79,7 +79,7 @@ void chomp_structure::init(const vec3& _center)
     radius_reach = radius_chomp * 3.0f;
     radius_eye = radius_chomp / 5.0f;
     max_angular_velocity = PI / 4;
-    max_speed = radius_chomp / 3.0f;
+    max_speed = radius_chomp / 6.0f;
     center = _center;
     rel_position = rush_speed = chain1 = chain2 = chain3 = chain4 = { 0,0,0 };
     angle = angular_v = speed = time_chasing = 0.0f;
@@ -216,16 +216,17 @@ void chomp_structure::move(const vcl::vec3& char_pos, float t, float dt)
             speed = 0.0f;
         }
     }
-    else if (falling) { // Finish falling before attacking again 
+    else if (falling) { // Finish falling before attacking again
         R_jaw = rotation_from_axis_angle_mat3({ 0,1,0 }, -0.6f);
         time_chasing += dt;
         if (time_chasing > 1) speed += -2.5f * dt; // g = 2.5
         rel_position += {0, 0, speed * dt};
-        if (rel_position.z < center.z) {
+        if (rel_position.z < 0) {
             falling = false;
             speed = 0.0f;
             time_chasing = 0.0f;
-            rel_position.z = center.z;
+            rel_position.z = 0.0f;
+            rush_speed = { 0.0f,0.0f,0.0f };
         }
         for (vec3* chain : { &chain1, &chain2, &chain3, &chain4 })
             chain->z = std::min(chain->z, rel_position.z);
@@ -233,10 +234,19 @@ void chomp_structure::move(const vcl::vec3& char_pos, float t, float dt)
     else if (norm(char_pos - center) < 2 * radius_reach) { // Target before attack
         time_chasing += dt;
         float da = atan2(char_pos.y - (center + rel_position).y, char_pos.x - (center + rel_position).x) - angle;
+        while (da > PI) {
+            angle += 2*PI;
+            da -= 2*PI;
+        }
+        while (da < -PI) {
+            angle -= 2 * PI;
+            da += 2 * PI;
+        }
         angle += da * std::min(1.0f, 5 * max_angular_velocity * dt / abs(da));
-        if (time_chasing > 2 && std::sin(5 * 3.14f * t) > 0.9f) { // Avoid discontinuity in mouth opening
+        if (time_chasing > 1.75f && std::sin(5 * 3.14f * t) > 0.75f) { // Avoid discontinuity in mouth opening
             rushing = true;
-            rush_speed = normalize(char_pos - (center + rel_position)) * 50 * max_speed;
+            rush_speed = normalize(char_pos - (center + rel_position + vec3{ 0,0,radius_chomp })) * 100 * max_speed;
+            if (rush_speed.z < 0) rush_speed.z = 0;
         }
         R_vertical = rotation_from_axis_angle_mat3({ 0,1,0 }, -atan2(rush_speed.z, norm(rush_speed * vec3{ 1,1,0 })));
     }
@@ -247,6 +257,7 @@ void chomp_structure::move(const vcl::vec3& char_pos, float t, float dt)
             else if (distrib(generator) * 2 < 1) angular_v = -max_angular_velocity;
             else angular_v = 0;
         angle += angular_v * dt;
+
         if (distrib(generator) < 0.05f)
             if (distrib(generator) * 4 < 3) speed = max_speed;
             else speed = 0;

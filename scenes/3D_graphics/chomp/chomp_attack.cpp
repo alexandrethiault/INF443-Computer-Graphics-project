@@ -281,11 +281,11 @@ void chomp_structure::move(const vcl::vec3& char_pos, float t, float dt)
         time_chasing += dt;
         if (time_chasing > 1) speed += -2.5f * dt; // g = 2.5
         rel_position += {0, 0, speed * dt};
-        if (rel_position.z < center.z) {
+        if (rel_position.z < 0.0f) {
             falling = false;
             speed = 0.0f;
             time_chasing = 0.0f;
-            rel_position.z = center.z;
+            rel_position.z = 0.0f;
         }
         for (vec3* chain : { &chain1, &chain2, &chain3, &chain4 })
             chain->z = std::min(chain->z, rel_position.z);
