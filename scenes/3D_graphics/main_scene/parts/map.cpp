@@ -16,9 +16,36 @@ void map_structure::create_sky()
     mesh _sky = mesh_primitive_sphere(100);
     for (vec2& uv : _sky.texture_uv)
         uv = { 0.5f - uv.y, uv.x };
-    sky = _sky;
+    sky = _sky; // Conversion mesh -> mesh_drawable
     sky.uniform.shading = { 1,0,0 }; // set pure ambiant component (no diffuse, no specular)
     texture_sky = create_texture_gpu(image_load_png("scenes/shared_assets/textures/skybox.png"));
+}
+
+void map_structure::other_objects()
+{
+    mesh _post = mesh_primitive_cylinder(0.05f, { 0,0,0 }, { 0,0,0.23f }, 17);
+    for (int i = 0; i < (int)_post.texture_uv.size(); i++)  _post.texture_uv[i].x *= 4;
+    post = _post;
+    post.uniform.shading = { 1,0,0 };
+    texture_post = create_texture_gpu(image_load_png("scenes/shared_assets/textures/dark_wood.png"));
+    post_top = mesh_primitive_disc(0.05f, { 0,0,0.23f }, { 0,0,1 }, 17);
+    post_top.uniform.shading = { 1,0,0 };
+    texture_post_top = create_texture_gpu(image_load_png("scenes/shared_assets/textures/cut_wood.png"));
+    std::fstream posts("scenes/shared_assets/coords/posts.txt");
+    int n; posts >> n;
+    post_positions.resize(n);
+    for (int i = 0; i < n; i++)
+        posts >> post_positions[i].x >> post_positions[i].y >> post_positions[i].z;
+
+    mesh _billboard = mesh_primitive_quad({ -0.2f, 0.55f,0 }, { 0.2f, 0.55f,0 }, { 0.2f,0,0 }, { -0.2f,0,0 });
+    billboard = _billboard;
+    billboard.uniform.shading = { 1,0,0 };
+    texture_tree = create_texture_gpu(image_load_png("scenes/shared_assets/textures/bb_tree.png"));
+    std::fstream trees("scenes/shared_assets/coords/trees.txt");
+    trees >> n;
+    tree_positions.resize(n);
+    for (int i = 0; i < n; i++)
+        trees >> tree_positions[i].x >> tree_positions[i].y >> tree_positions[i].z;
 }
 
 void map_structure::loadMTL(const char* path)
@@ -140,6 +167,61 @@ void map_structure::loadOBJ(const char* path)
         texture_indices.push_back(current_mtl_index);
     }
     std::cout << "OBJ loaded" << std::endl;
+}
+
+
+void map_structure::draw_nobillboards(std::map<std::string, GLuint>& shaders, scene_structure& scene, bool surf, bool wf)
+{
+    glBindTexture(GL_TEXTURE_2D, texture_sky);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    sky.uniform.transform.translation = scene.camera.camera_position(); // Move sky around camera
+    draw(sky, scene.camera, shaders["mesh"]);
+    if (wf) draw(sky, scene.camera, shaders["wireframe"]);
+
+    for (vec3 post_position : post_positions) {
+        glBindTexture(GL_TEXTURE_2D, texture_post);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        post.uniform.transform.translation = post_position;
+        if (surf) draw(post, scene.camera, shaders["mesh"]);
+        if (wf) draw(post, scene.camera, shaders["wireframe"]);
+        glBindTexture(GL_TEXTURE_2D, texture_post_top);
+        post_top.uniform.transform.translation = post_position;
+        if (surf) draw(post_top, scene.camera, shaders["mesh"]);
+        if (wf) draw(post_top, scene.camera, shaders["wireframe"]);
+    }
+
+    // Bob omb battlefield map
+    for (int i = 2; i < (int)map.size(); i++) { // 0 and 1 are billboards
+        glBindTexture(GL_TEXTURE_2D, map_textures[texture_indices[i]]);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        if (surf) draw(map[i], scene.camera, shaders["mesh"]);
+        if (wf) draw(map[i], scene.camera, shaders["wireframe"]);
+    }
+}
+
+bool cmpbillboard(vec3& u, vec3& v, vec3& cam_pos) { return (norm(u - cam_pos) > norm(v - cam_pos)); }
+
+void map_structure::draw_billboards(std::map<std::string, GLuint>& shaders, scene_structure& scene, bool bb, bool wf)
+{
+    for (int i = 0; i < 2; i++) {
+        glBindTexture(GL_TEXTURE_2D, map_textures[texture_indices[i]]);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        if (bb) draw(map[i], scene.camera, shaders["mesh"]);
+        if (wf) draw(map[i], scene.camera, shaders["wireframe"]);
+    }
+
+    std::sort(tree_positions.begin(), tree_positions.end(),
+        [&scene](auto u, auto v) -> bool {return cmpbillboard(u, v, scene.camera.camera_position()); });
+    for (vec3 tree_position : tree_positions) {
+        vec3 dpos = scene.camera.camera_position() - tree_position;
+        billboard.uniform.transform.rotation =rotation_from_axis_angle_mat3({ 0,0,1 }, atan2(dpos.y, dpos.x)) * mat3{0, 0, 1, 1, 0, 0, 0, 1, 0};
+        billboard.uniform.transform.translation = tree_position;
+        glBindTexture(GL_TEXTURE_2D, texture_tree);
+        if (bb) draw(billboard, scene.camera, shaders["mesh"]);
+        if (wf) draw(billboard, scene.camera, shaders["wireframe"]);
+    }
 }
 
 #endif
