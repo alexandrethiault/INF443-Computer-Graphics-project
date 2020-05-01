@@ -28,9 +28,8 @@ struct character_structure
     //vcl::hierarchy_mesh_drawable_display_skeleton hierarchy_visual_debug;
     GLuint texture_up, texture_down, texture_tongue, texture_eye, texture_tooth, texture_chain;
 
-    void init(const vcl::vec3& center);
-    void draw_nobillboards(std::map<std::string, GLuint>& shaders, scene_structure& scene, bool surf, bool wf);
-    void draw_billboards(std::map<std::string, GLuint>& shaders, scene_structure& scene, bool bb, bool wf);
+    void init(const vcl::vec3& center, std::vector<vcl::mesh_drawable> map, std::vector<GLuint> map_textures, std::vector<int> texture_indices, std::vector<std::string> part_name);
+    void draw(std::map<std::string, GLuint>& shaders, scene_structure& scene, bool surf, bool wf, std::vector<std::string> part_name, std::vector<int> texture_indices, std::vector<GLuint> map_textures);
     void move(float t, float dt);
 };
 
@@ -41,6 +40,9 @@ struct scene_model : scene_base
     void frame_draw(std::map<std::string,GLuint>& shaders, scene_structure& scene, gui_structure& gui);
     void set_gui();
 
+    void loadMTL(const char* path);
+    void loadOBJ(const char* path);
+
     character_structure character;
 
     vcl::mesh_drawable demo_ground;
@@ -48,6 +50,7 @@ struct scene_model : scene_base
     std::vector<vcl::mesh_drawable> map;
     std::vector<mtltexture> map_mtl;
     std::vector<int> texture_indices;
+    std::vector<std::string> part_name;
     std::vector<GLuint> map_textures;
 
     gui_scene_structure gui_scene;
