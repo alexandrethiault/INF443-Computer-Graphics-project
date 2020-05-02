@@ -10,7 +10,7 @@
 using namespace vcl;
 
 const std::string map_dir = "scenes/shared_assets/models/Mario GU/";
-const std::string obj_mario = "V7";
+const std::string obj_mario = "V12";
 const std::string mario_dir = "scenes/shared_assets/textures/mario/";
 const float PI = 3.14159f;
 
@@ -24,11 +24,11 @@ void scene_model::setup_data(std::map<std::string, GLuint>& shaders, scene_struc
     demo_ground.uniform.color = { 1,1,0.5f };
     demo_ground.uniform.shading = { 1,0,0 };
 
-    loadMTL("scenes/shared_assets/models/Mario GU/V7.mtl");
-    loadOBJ("scenes/shared_assets/models/Mario GU/V7.obj");
+    loadMTL("scenes/shared_assets/models/Mario GU/V12.mtl");
+    loadOBJ("scenes/shared_assets/models/Mario GU/V12.obj");
 
     character.init({ 0,0,0 }, map, map_textures, texture_indices, part_name);
-    //character.hierarchy.set_shader_for_all_elements(shaders["mesh"]);
+    character.hierarchy.set_shader_for_all_elements(shaders["mesh"]);
 
     timer.scale = 1.0f;
     timer.t_max = 10.0f;
@@ -44,37 +44,13 @@ void scene_model::frame_draw(std::map<std::string,GLuint>& shaders, scene_struct
 
     draw(demo_ground, scene.camera, shaders["mesh"]);
 
-    //character.move(t, ((t < last_t) ? timer.t_max - timer.t_min : 0) + t - last_t);
-
-    //character.draw_nobillboards(shaders, scene, gui_scene.surface, gui_scene.wireframe);
-
-    // Bob omb battlefield map
-    /*
-    for (int i = 0; i < (int)map.size(); i++) { // 0 and 1 are billboards
-        glBindTexture(GL_TEXTURE_2D, map_textures[texture_indices[i]]);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-        map[i].uniform.transform.scaling = .01f;
-        if (gui_scene.surface) draw(map[i], scene.camera, shaders["mesh"]);
-        if (gui_scene.wireframe) draw(map[i], scene.camera, shaders["wireframe"]);
-    }
-    */
-
+    character.move(t, ((t < last_t) ? timer.t_max - timer.t_min : 0) + t - last_t);
     character.draw(shaders, scene, gui_scene.surface, gui_scene.wireframe, part_name, texture_indices, map_textures);
-
-    //// BILLBOARDS ALWAYS LAST ////
-
-    /*glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glDepthMask(false);
-    character.draw_billboards(shaders, scene, gui_scene.billboards, gui_scene.wireframe);
-    glBindTexture(GL_TEXTURE_2D, scene.texture_white);
-    glDepthMask(true);*/
 
     last_t = t;
 }
 
-void character_structure::init(const vec3& center, std::vector<vcl::mesh_drawable> map, std::vector<GLuint> map_textures, std::vector<int> texture_indices, std::vector<std::string> part_name)
+void character_structure::init(const vec3& center, std::vector<vcl::mesh_drawable>& map, std::vector<GLuint>& map_textures, std::vector<int>& texture_indices, std::vector<std::string>& part_name)
 {
     // initialisation de tous les champs de character_structure, notamment construire la hi�rarchie et load les textures
     // par convention, z est la verticale et � l'initialisation on fait regarder vers x 
@@ -84,11 +60,40 @@ void character_structure::init(const vec3& center, std::vector<vcl::mesh_drawabl
         return;
     }
 
-    for (int i = 0; i < (int)map.size(); i++)
-        hierarchy.add(map[i], part_name[i]);
+    hierarchy.add(map[find_mesh_index("Corps", part_name)], "Corps");
+    hierarchy.add(map[find_mesh_index("Boutons_GU", part_name)], "Boutons_GU", "Corps");
+    hierarchy.add(map[find_mesh_index("Bassin", part_name)], "Bassin", "Corps");
+    hierarchy.add(map[find_mesh_index("Ceinture", part_name)], "Ceinture", "Bassin");
+    hierarchy.add(map[find_mesh_index("Left_Upper_Leg", part_name)], "Left_Upper_Leg", "Bassin");
+    hierarchy.add(map[find_mesh_index("Right_Upper_Leg", part_name)], "Right_Upper_Leg", "Bassin");
+    hierarchy.add(map[find_mesh_index("Left_Lower_Leg", part_name)], "Left_Lower_Leg", "Left_Upper_Leg");
+    hierarchy.add(map[find_mesh_index("Right_Lower_Leg", part_name)], "Right_Lower_Leg", "Right_Upper_Leg");
+    hierarchy.add(map[find_mesh_index("Left_Foot", part_name)], "Left_Foot", "Left_Lower_Leg");
+    hierarchy.add(map[find_mesh_index("Right_Foot", part_name)], "Right_Foot", "Right_Lower_Leg");
+    hierarchy.add(map[find_mesh_index("Large_Bande_1", part_name)], "Large_Bande_1", "Left_Upper_Leg");
+    hierarchy.add(map[find_mesh_index("Small_Bande_1", part_name)], "Small_Bande_1", "Left_Lower_Leg");
+    hierarchy.add(map[find_mesh_index("Large_Bande_2", part_name)], "Large_Bande_2", "Right_Upper_Leg");
+    hierarchy.add(map[find_mesh_index("Small_Bande_2", part_name)], "Small_Bande_2", "Right_Lower_Leg");
+    hierarchy.add(map[find_mesh_index("Left_Upper_Arm", part_name)], "Left_Upper_Arm", "Corps");
+    hierarchy.add(map[find_mesh_index("Left_Lower_Arm", part_name)], "Left_Lower_Arm", "Left_Upper_Arm");
+    hierarchy.add(map[find_mesh_index("Left_Hand", part_name)], "Left_Hand", "Left_Lower_Arm");
+    hierarchy.add(map[find_mesh_index("Right_Upper_Arm", part_name)], "Right_Upper_Arm", "Corps");
+    hierarchy.add(map[find_mesh_index("Right_Lower_Arm", part_name)], "Right_Lower_Arm", "Right_Upper_Arm");
+    hierarchy.add(map[find_mesh_index("Right_Hand", part_name)], "Right_Hand", "Right_Lower_Arm");
+    hierarchy.add(map[find_mesh_index("Epaule_Gauche", part_name)], "Epaule_Gauche", "Corps");
+    hierarchy.add(map[find_mesh_index("Epaulette_Gauche", part_name)], "Epaulette_Gauche", "Epaule_Gauche");
+    hierarchy.add(map[find_mesh_index("Epaule_Droite", part_name)], "Epaule_Droite", "Corps");
+    hierarchy.add(map[find_mesh_index("Epaulette_Droite", part_name)], "Epaulette_Droite", "Epaule_Droite");
+    hierarchy.add(map[find_mesh_index("Cou", part_name)], "Cou", "Corps");
+    hierarchy.add(map[find_mesh_index("Skin", part_name)], "Skin", "Cou");
+    hierarchy.add(map[find_mesh_index("Cheveux", part_name)], "Cheveux", "Skin");
+    hierarchy.add(map[find_mesh_index("Hair_Piece", part_name)], "Hair_Piece", "Skin");
+    hierarchy.add(map[find_mesh_index("Eyes", part_name)], "Eyes", "Skin");
+    hierarchy.add(map[find_mesh_index("Chapeau", part_name)], "Chapeau", "Skin");
+    hierarchy.add(map[find_mesh_index("Moustache", part_name)], "Moustache", "Skin");
 }
 
-void character_structure::draw(std::map<std::string, GLuint>& shaders, scene_structure& scene, bool surf, bool wf, std::vector<std::string> part_name, std::vector<int> texture_indices, std::vector<GLuint> map_textures)
+void character_structure::draw(std::map<std::string, GLuint>& shaders, scene_structure& scene, bool surf, bool wf, std::vector<std::string>& part_name, std::vector<int>& texture_indices, std::vector<GLuint>& map_textures)
 {
     // dessiner toutes les parties qui ne sont pas des billboards
     // copi� coll� de ce que j'ai fait pour le chomp
@@ -119,7 +124,18 @@ void character_structure::move(float t, float dt)
     // peut-�tre � faire seulement dans interpolation_position.cpp
     if (dt > 0.1f) dt = 0.1f;
 
-    //hierarchy.update_local_to_global_coordinates();
+    mat3 R = rotation_from_axis_angle_mat3({0, 1, 0}, PI/2.);
+
+    hierarchy["Corps"].transform.rotation = R;
+
+    hierarchy.update_local_to_global_coordinates();
+}
+
+int character_structure::find_mesh_index(std::string name, std::vector<std::string>& part_name) {
+    int i = 0;
+    while(i < part_name.size() && part_name[i] != name)
+        i++;
+    return i;
 }
 
 void scene_model::set_gui()

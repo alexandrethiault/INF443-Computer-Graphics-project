@@ -28,8 +28,9 @@ struct character_structure
     //vcl::hierarchy_mesh_drawable_display_skeleton hierarchy_visual_debug;
     GLuint texture_up, texture_down, texture_tongue, texture_eye, texture_tooth, texture_chain;
 
-    void init(const vcl::vec3& center, std::vector<vcl::mesh_drawable> map, std::vector<GLuint> map_textures, std::vector<int> texture_indices, std::vector<std::string> part_name);
-    void draw(std::map<std::string, GLuint>& shaders, scene_structure& scene, bool surf, bool wf, std::vector<std::string> part_name, std::vector<int> texture_indices, std::vector<GLuint> map_textures);
+    void init(const vcl::vec3& center, std::vector<vcl::mesh_drawable>& map, std::vector<GLuint>& map_textures, std::vector<int>& texture_indices, std::vector<std::string>& part_name);
+    void draw(std::map<std::string, GLuint>& shaders, scene_structure& scene, bool surf, bool wf, std::vector<std::string>& part_name, std::vector<int>& texture_indices, std::vector<GLuint>& map_textures);
+    int find_mesh_index(std::string name, std::vector<std::string>& part_name);
     void move(float t, float dt);
 };
 
