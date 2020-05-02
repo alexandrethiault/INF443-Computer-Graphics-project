@@ -9,9 +9,8 @@
 
 using namespace vcl;
 
-const std::string map_dir = "scenes/shared_assets/models/Mario GU/";
+const std::string mario_dir = "scenes/shared_assets/models/Mario GU/";
 const std::string obj_mario = "V12";
-const std::string mario_dir = "scenes/shared_assets/textures/mario/";
 const float PI = 3.14159f;
 
 void scene_model::setup_data(std::map<std::string, GLuint>& shaders, scene_structure& scene, gui_structure&)
@@ -21,13 +20,14 @@ void scene_model::setup_data(std::map<std::string, GLuint>& shaders, scene_struc
     scene.camera.apply_rotation(0, 0, 0, 1.2f);
 
     demo_ground = mesh_primitive_disc(20);
+    //demo_ground.uniform.transform.translation.z = -5.f;
     demo_ground.uniform.color = { 1,1,0.5f };
     demo_ground.uniform.shading = { 1,0,0 };
 
-    loadMTL("scenes/shared_assets/models/Mario GU/V12.mtl");
-    loadOBJ("scenes/shared_assets/models/Mario GU/V12.obj");
+    character.loadMTL("scenes/shared_assets/models/Mario GU/V12.mtl");
+    character.loadOBJ("scenes/shared_assets/models/Mario GU/V12.obj");
 
-    character.init({ 0,0,0 }, map, map_textures, texture_indices, part_name);
+    character.init({ 0,0,0 });
     character.hierarchy.set_shader_for_all_elements(shaders["mesh"]);
 
     timer.scale = 1.0f;
@@ -45,12 +45,12 @@ void scene_model::frame_draw(std::map<std::string,GLuint>& shaders, scene_struct
     draw(demo_ground, scene.camera, shaders["mesh"]);
 
     character.move(t, ((t < last_t) ? timer.t_max - timer.t_min : 0) + t - last_t);
-    character.draw(shaders, scene, gui_scene.surface, gui_scene.wireframe, part_name, texture_indices, map_textures);
+    character.draw(shaders, scene, gui_scene.surface, gui_scene.wireframe);
 
     last_t = t;
 }
 
-void character_structure::init(const vec3& center, std::vector<vcl::mesh_drawable>& map, std::vector<GLuint>& map_textures, std::vector<int>& texture_indices, std::vector<std::string>& part_name)
+void character_structure::init(const vec3& center)
 {
     // initialisation de tous les champs de character_structure, notamment construire la hi�rarchie et load les textures
     // par convention, z est la verticale et � l'initialisation on fait regarder vers x 
@@ -60,49 +60,49 @@ void character_structure::init(const vec3& center, std::vector<vcl::mesh_drawabl
         return;
     }
 
-    hierarchy.add(map[find_mesh_index("Corps", part_name)], "Corps");
-    hierarchy.add(map[find_mesh_index("Boutons_GU", part_name)], "Boutons_GU", "Corps");
-    hierarchy.add(map[find_mesh_index("Bassin", part_name)], "Bassin", "Corps");
-    hierarchy.add(map[find_mesh_index("Ceinture", part_name)], "Ceinture", "Bassin");
-    hierarchy.add(map[find_mesh_index("Left_Upper_Leg", part_name)], "Left_Upper_Leg", "Bassin");
-    hierarchy.add(map[find_mesh_index("Right_Upper_Leg", part_name)], "Right_Upper_Leg", "Bassin");
-    hierarchy.add(map[find_mesh_index("Left_Lower_Leg", part_name)], "Left_Lower_Leg", "Left_Upper_Leg");
-    hierarchy.add(map[find_mesh_index("Right_Lower_Leg", part_name)], "Right_Lower_Leg", "Right_Upper_Leg");
-    hierarchy.add(map[find_mesh_index("Left_Foot", part_name)], "Left_Foot", "Left_Lower_Leg");
-    hierarchy.add(map[find_mesh_index("Right_Foot", part_name)], "Right_Foot", "Right_Lower_Leg");
-    hierarchy.add(map[find_mesh_index("Large_Bande_1", part_name)], "Large_Bande_1", "Left_Upper_Leg");
-    hierarchy.add(map[find_mesh_index("Small_Bande_1", part_name)], "Small_Bande_1", "Left_Lower_Leg");
-    hierarchy.add(map[find_mesh_index("Large_Bande_2", part_name)], "Large_Bande_2", "Right_Upper_Leg");
-    hierarchy.add(map[find_mesh_index("Small_Bande_2", part_name)], "Small_Bande_2", "Right_Lower_Leg");
-    hierarchy.add(map[find_mesh_index("Left_Upper_Arm", part_name)], "Left_Upper_Arm", "Corps");
-    hierarchy.add(map[find_mesh_index("Left_Lower_Arm", part_name)], "Left_Lower_Arm", "Left_Upper_Arm");
-    hierarchy.add(map[find_mesh_index("Left_Hand", part_name)], "Left_Hand", "Left_Lower_Arm");
-    hierarchy.add(map[find_mesh_index("Right_Upper_Arm", part_name)], "Right_Upper_Arm", "Corps");
-    hierarchy.add(map[find_mesh_index("Right_Lower_Arm", part_name)], "Right_Lower_Arm", "Right_Upper_Arm");
-    hierarchy.add(map[find_mesh_index("Right_Hand", part_name)], "Right_Hand", "Right_Lower_Arm");
-    hierarchy.add(map[find_mesh_index("Epaule_Gauche", part_name)], "Epaule_Gauche", "Corps");
-    hierarchy.add(map[find_mesh_index("Epaulette_Gauche", part_name)], "Epaulette_Gauche", "Epaule_Gauche");
-    hierarchy.add(map[find_mesh_index("Epaule_Droite", part_name)], "Epaule_Droite", "Corps");
-    hierarchy.add(map[find_mesh_index("Epaulette_Droite", part_name)], "Epaulette_Droite", "Epaule_Droite");
-    hierarchy.add(map[find_mesh_index("Cou", part_name)], "Cou", "Corps");
-    hierarchy.add(map[find_mesh_index("Skin", part_name)], "Skin", "Cou");
-    hierarchy.add(map[find_mesh_index("Cheveux", part_name)], "Cheveux", "Skin");
-    hierarchy.add(map[find_mesh_index("Hair_Piece", part_name)], "Hair_Piece", "Skin");
-    hierarchy.add(map[find_mesh_index("Eyes", part_name)], "Eyes", "Skin");
-    hierarchy.add(map[find_mesh_index("Chapeau", part_name)], "Chapeau", "Skin");
-    hierarchy.add(map[find_mesh_index("Moustache", part_name)], "Moustache", "Skin");
+    hierarchy.add(mario[find_mesh_index("Corps")], "Corps");
+    hierarchy.add(mario[find_mesh_index("Boutons_GU")], "Boutons_GU", "Corps");
+    hierarchy.add(mario[find_mesh_index("Bassin")], "Bassin", "Corps");
+    hierarchy.add(mario[find_mesh_index("Ceinture")], "Ceinture", "Bassin");
+    hierarchy.add(mario[find_mesh_index("Left_Upper_Leg")], "Left_Upper_Leg", "Bassin");
+    hierarchy.add(mario[find_mesh_index("Right_Upper_Leg")], "Right_Upper_Leg", "Bassin");
+    hierarchy.add(mario[find_mesh_index("Left_Lower_Leg")], "Left_Lower_Leg", "Left_Upper_Leg");
+    hierarchy.add(mario[find_mesh_index("Right_Lower_Leg")], "Right_Lower_Leg", "Right_Upper_Leg");
+    hierarchy.add(mario[find_mesh_index("Left_Foot")], "Left_Foot", "Left_Lower_Leg");
+    hierarchy.add(mario[find_mesh_index("Right_Foot")], "Right_Foot", "Right_Lower_Leg");
+    hierarchy.add(mario[find_mesh_index("Large_Bande_1")], "Large_Bande_1", "Right_Upper_Leg");
+    hierarchy.add(mario[find_mesh_index("Small_Bande_1")], "Small_Bande_1", "Right_Lower_Leg");
+    hierarchy.add(mario[find_mesh_index("Large_Bande_2")], "Large_Bande_2", "Left_Upper_Leg");
+    hierarchy.add(mario[find_mesh_index("Small_Bande_2")], "Small_Bande_2", "Left_Lower_Leg");
+    hierarchy.add(mario[find_mesh_index("Left_Upper_Arm")], "Left_Upper_Arm", "Corps");
+    hierarchy.add(mario[find_mesh_index("Left_Lower_Arm")], "Left_Lower_Arm", "Left_Upper_Arm");
+    hierarchy.add(mario[find_mesh_index("Left_Hand")], "Left_Hand", "Left_Lower_Arm");
+    hierarchy.add(mario[find_mesh_index("Right_Upper_Arm")], "Right_Upper_Arm", "Corps");
+    hierarchy.add(mario[find_mesh_index("Right_Lower_Arm")], "Right_Lower_Arm", "Right_Upper_Arm");
+    hierarchy.add(mario[find_mesh_index("Right_Hand")], "Right_Hand", "Right_Lower_Arm");
+    hierarchy.add(mario[find_mesh_index("Epaule_Gauche")], "Epaule_Gauche", "Corps");
+    hierarchy.add(mario[find_mesh_index("Epaulette_Gauche")], "Epaulette_Gauche", "Epaule_Gauche");
+    hierarchy.add(mario[find_mesh_index("Epaule_Droite")], "Epaule_Droite", "Corps");
+    hierarchy.add(mario[find_mesh_index("Epaulette_Droite")], "Epaulette_Droite", "Epaule_Droite");
+    hierarchy.add(mario[find_mesh_index("Cou")], "Cou", "Corps");
+    hierarchy.add(mario[find_mesh_index("Skin")], "Skin", "Cou");
+    hierarchy.add(mario[find_mesh_index("Cheveux")], "Cheveux", "Skin");
+    hierarchy.add(mario[find_mesh_index("Hair_Piece")], "Hair_Piece", "Skin");
+    hierarchy.add(mario[find_mesh_index("Eyes")], "Eyes", "Skin");
+    hierarchy.add(mario[find_mesh_index("Chapeau")], "Chapeau", "Skin");
+    hierarchy.add(mario[find_mesh_index("Moustache")], "Moustache", "Skin");
 }
 
-void character_structure::draw(std::map<std::string, GLuint>& shaders, scene_structure& scene, bool surf, bool wf, std::vector<std::string>& part_name, std::vector<int>& texture_indices, std::vector<GLuint>& map_textures)
+void character_structure::draw(std::map<std::string, GLuint>& shaders, scene_structure& scene, bool surf, bool wf)
 {
     // dessiner toutes les parties qui ne sont pas des billboards
     // copi� coll� de ce que j'ai fait pour le chomp
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); // avoids sampling artifacts
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE); // avoids sampling artifacts
-
+    
     for (int i = 0; i < (int)part_name.size(); i++) {
-        glBindTexture(GL_TEXTURE_2D, map_textures[texture_indices[i]]);
+        glBindTexture(GL_TEXTURE_2D, mario_textures[texture_indices[i]]);
         hierarchy[part_name[i]].global_transform.scaling = .01f;
         if (surf) draw_hierarchy_element(hierarchy[part_name[i]], scene.camera, shaders["mesh"]);
         if (wf) draw_hierarchy_element(hierarchy[part_name[i]], scene.camera, shaders["wireframe"]);
@@ -126,12 +126,12 @@ void character_structure::move(float t, float dt)
 
     mat3 R = rotation_from_axis_angle_mat3({0, 1, 0}, PI/2.);
 
-    hierarchy["Corps"].transform.rotation = R;
+    //hierarchy["Corps"].transform.rotation = R;
 
     hierarchy.update_local_to_global_coordinates();
 }
 
-int character_structure::find_mesh_index(std::string name, std::vector<std::string>& part_name) {
+int character_structure::find_mesh_index(std::string name) {
     int i = 0;
     while(i < part_name.size() && part_name[i] != name)
         i++;
@@ -151,9 +151,9 @@ void scene_model::set_gui()
 
 }
 
-void scene_model::loadMTL(const char* path)
+void character_structure::loadMTL(const char* path)
 {
-    size_t size = map_mtl.size();
+    size_t size = mario_mtl.size();
     FILE* file = fopen(path, "r");
     assert(!(file == NULL));
     while (true) {
@@ -162,46 +162,46 @@ void scene_model::loadMTL(const char* path)
         if (res == EOF) break;
         if (strcmp(lineHeader, "newmtl") == 0) {
             size++;
-            map_mtl.push_back(mtltexture());
+            mario_mtl.push_back(mtltexture());
             char name[128];
             fscanf(file, "%s\n", name);
-            map_mtl[size - 1].name = name;
+            mario_mtl[size - 1].name = name;
         }
         else if (strcmp(lineHeader, "Ns") == 0) {
-            fscanf(file, "%f\n", &(map_mtl[size - 1].Ns));
+            fscanf(file, "%f\n", &(mario_mtl[size - 1].Ns));
         }
         else if (strcmp(lineHeader, "Ka") == 0) {
-            fscanf(file, "%f %f %f\n", &(map_mtl[size - 1].Ka.x), &(map_mtl[size - 1].Ka.y), &(map_mtl[size - 1].Ka.z));
+            fscanf(file, "%f %f %f\n", &(mario_mtl[size - 1].Ka.x), &(mario_mtl[size - 1].Ka.y), &(mario_mtl[size - 1].Ka.z));
         }
         else if (strcmp(lineHeader, "Kd") == 0) {
-            fscanf(file, "%f %f %f\n", &(map_mtl[size - 1].Kd.x), &(map_mtl[size - 1].Kd.y), &(map_mtl[size - 1].Kd.z));
+            fscanf(file, "%f %f %f\n", &(mario_mtl[size - 1].Kd.x), &(mario_mtl[size - 1].Kd.y), &(mario_mtl[size - 1].Kd.z));
         }
         else if (strcmp(lineHeader, "Ks") == 0) {
-            fscanf(file, "%f %f %f\n", &(map_mtl[size - 1].Ks.x), &(map_mtl[size - 1].Ks.y), &(map_mtl[size - 1].Ks.z));
+            fscanf(file, "%f %f %f\n", &(mario_mtl[size - 1].Ks.x), &(mario_mtl[size - 1].Ks.y), &(mario_mtl[size - 1].Ks.z));
         }
         else if (strcmp(lineHeader, "Ke") == 0) {
-            fscanf(file, "%f %f %f\n", &(map_mtl[size - 1].Ke.x), &(map_mtl[size - 1].Ke.y), &(map_mtl[size - 1].Ke.z));
+            fscanf(file, "%f %f %f\n", &(mario_mtl[size - 1].Ke.x), &(mario_mtl[size - 1].Ke.y), &(mario_mtl[size - 1].Ke.z));
         }
         else if (strcmp(lineHeader, "Ni") == 0) {
-            fscanf(file, "%f\n", &(map_mtl[size - 1].Ni));
+            fscanf(file, "%f\n", &(mario_mtl[size - 1].Ni));
         }
         else if (strcmp(lineHeader, "d") == 0) {
-            fscanf(file, "%f\n", &(map_mtl[size - 1].d));
+            fscanf(file, "%f\n", &(mario_mtl[size - 1].d));
         }
         else if (strcmp(lineHeader, "illum") == 0) {
-            fscanf(file, "%d\n", &(map_mtl[size - 1].illum));
+            fscanf(file, "%d\n", &(mario_mtl[size - 1].illum));
         }
         else if (strcmp(lineHeader, "map_Kd") == 0) {
             char map_Kd[128];
             fscanf(file, "%s\n", map_Kd);
-            map_mtl[size - 1].map_Kd = map_Kd;
-            map_textures.push_back(create_texture_gpu(image_load_png(map_dir + map_mtl[size - 1].map_Kd)));
+            mario_mtl[size - 1].map_Kd = map_Kd;
+            mario_textures.push_back(create_texture_gpu(image_load_png(mario_dir + mario_mtl[size - 1].map_Kd)));
         }
     }
     std::cout << "\tMTL loaded\t[OK]" << std::endl;
 }
 
-void scene_model::loadOBJ(const char* path)
+void character_structure::loadOBJ(const char* path)
 {
     std::vector<vec3> temp_vertices;
     std::vector<vec2> temp_uvs;
@@ -224,8 +224,8 @@ void scene_model::loadOBJ(const char* path)
         }
         else if (strcmp(lineHeader, "g") == 0) {
             if (nbtri) {
-                map.push_back(tri); // conversion mesh -> mesh_drawable
-                map[map.size() - 1].uniform.shading = { 0.5f, map_mtl[current_mtl_index].Kd.x, 0 };
+                mario.push_back(tri); // conversion mesh -> mesh_drawable
+                mario[mario.size() - 1].uniform.shading = { 0.5f, mario_mtl[current_mtl_index].Kd.x, 0 };
                 std::string name = std::string(current_name);
                 part_name.push_back(name);
                 texture_indices.push_back(current_mtl_index);
@@ -251,8 +251,8 @@ void scene_model::loadOBJ(const char* path)
         }
         else if (strcmp(lineHeader, "usemtl") == 0) {
             fscanf(file, "%s\n", current_mtl);
-            for (int i = 0; i < (int)map_mtl.size(); i++)
-                if (map_mtl[i].name == current_mtl)
+            for (int i = 0; i < (int)mario_mtl.size(); i++)
+                if (mario_mtl[i].name == current_mtl)
                     current_mtl_index = i;
         }
         else if (strcmp(lineHeader, "f") == 0) {
@@ -273,8 +273,8 @@ void scene_model::loadOBJ(const char* path)
         }
     }
     if (nbtri) {
-        map.push_back(tri); // conversion mesh -> mesh_drawable
-        map[map.size() - 1].uniform.shading = { map_mtl[current_mtl_index].Ka.x, 0, map_mtl[current_mtl_index].Ns };
+        mario.push_back(tri); // conversion mesh -> mesh_drawable
+        mario[mario.size() - 1].uniform.shading = { mario_mtl[current_mtl_index].Ka.x, 0, mario_mtl[current_mtl_index].Ns };
         texture_indices.push_back(current_mtl_index);
         std::string name = std::string(current_name);
         part_name.push_back(name);
