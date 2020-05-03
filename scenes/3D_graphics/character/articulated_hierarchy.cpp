@@ -10,7 +10,7 @@
 using namespace vcl;
 
 const std::string mario_dir = "scenes/shared_assets/models/Mario GU/";
-const std::string obj_mario = "V12";
+const std::string obj_mario = "V13";
 const float PI = 3.14159f;
 
 void scene_model::setup_data(std::map<std::string, GLuint>& shaders, scene_structure& scene, gui_structure&)
@@ -24,8 +24,8 @@ void scene_model::setup_data(std::map<std::string, GLuint>& shaders, scene_struc
     demo_ground.uniform.color = { 1,1,0.5f };
     demo_ground.uniform.shading = { 1,0,0 };
 
-    character.loadMTL("scenes/shared_assets/models/Mario GU/V12.mtl");
-    character.loadOBJ("scenes/shared_assets/models/Mario GU/V12.obj");
+    character.loadMTL("scenes/shared_assets/models/Mario GU/V13.mtl");
+    character.loadOBJ("scenes/shared_assets/models/Mario GU/V13.obj");
 
     character.init({ 0,0,0 });
     character.hierarchy.set_shader_for_all_elements(shaders["mesh"]);
@@ -60,6 +60,9 @@ void character_structure::init(const vec3& center)
         return;
     }
 
+    for (int i = 0; i < (int)part_name.size(); i++)
+        std::cout << part_name[i] << std::endl;
+
     hierarchy.add(mario[find_mesh_index("Corps")], "Corps");
     hierarchy.add(mario[find_mesh_index("Boutons_GU")], "Boutons_GU", "Corps");
     hierarchy.add(mario[find_mesh_index("Bassin")], "Bassin", "Corps");
@@ -86,10 +89,15 @@ void character_structure::init(const vec3& center)
     hierarchy.add(mario[find_mesh_index("Epaulette_Droite")], "Epaulette_Droite", "Epaule_Droite");
     hierarchy.add(mario[find_mesh_index("Cou")], "Cou", "Corps");
     hierarchy.add(mario[find_mesh_index("Skin")], "Skin", "Cou");
-    hierarchy.add(mario[find_mesh_index("Cheveux")], "Cheveux", "Skin");
+    hierarchy.add(mario[find_mesh_index("Hair")], "Hair", "Skin");
     hierarchy.add(mario[find_mesh_index("Hair_Piece")], "Hair_Piece", "Skin");
     hierarchy.add(mario[find_mesh_index("Eyes")], "Eyes", "Skin");
-    hierarchy.add(mario[find_mesh_index("Chapeau")], "Chapeau", "Skin");
+    hierarchy.add(mario[find_mesh_index("Bicorne")], "Bicorne", "Skin");
+    hierarchy.add(mario[find_mesh_index("Cocbleu")], "Cocbleu", "Bicorne");
+    hierarchy.add(mario[find_mesh_index("Cocrouge")], "Cocrouge", "Bicorne");
+    hierarchy.add(mario[find_mesh_index("Cocblanc")], "Cocblanc", "Bicorne");
+    hierarchy.add(mario[find_mesh_index("Broche")], "Broche", "Bicorne");
+    hierarchy.add(mario[find_mesh_index("Bouton_Bicorne")], "Bouton_Bicorne", "Bicorne");
     hierarchy.add(mario[find_mesh_index("Moustache")], "Moustache", "Skin");
 }
 
