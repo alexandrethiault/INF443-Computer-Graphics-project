@@ -64,10 +64,10 @@ void bubbles_structure::simulate() {
             if (!it->squishing && !it->unsquishing) {
                 it->squish_counter++;
                 it->squishing = true;
-                it->squish = 0.01f;
+                it->squish = 0.5f * dt;
             }
             else if (it->squishing) {
-                it->squish += 0.01f;
+                it->squish += 0.7f * dt;
                 if (it->squish > 0.5f) {
                     it->squish = 0.5f;
                     it->squishing = false;
@@ -77,7 +77,7 @@ void bubbles_structure::simulate() {
                 }
             }
             else if (it->unsquishing) {
-                it->squish -= 0.04f; // Unsquishing 4 times quicker than squishing
+                it->squish -= 4 * 0.7f * dt; // Unsquishing 4 times quicker than squishing
                 if (it->squish < 0) {
                     it->unsquishing = false;
                     it->squish = 0;

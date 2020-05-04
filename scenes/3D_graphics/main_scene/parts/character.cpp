@@ -153,7 +153,7 @@ void character_structure::loadMTL(const char* path)
             mario_textures.push_back(create_texture_gpu(image_load_png(mario_dir + mario_mtl[size - 1].map_Kd)));
         }
     }
-    std::cout << "\tMTL loaded\t[OK]" << std::endl;
+    std::cout << "\tMario MTL loaded\t[OK]" << std::endl;
 }
 
 void character_structure::loadOBJ(const char* path)
@@ -234,7 +234,7 @@ void character_structure::loadOBJ(const char* path)
         std::string name = std::string(current_name);
         part_name.push_back(name);
     }
-    std::cout << "\tOBJ loaded\t[OK]" << std::endl;
+    std::cout << "\tMario OBJ loaded\t[OK]" << std::endl;
 }
 
 #endif

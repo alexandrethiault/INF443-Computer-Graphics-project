@@ -16,6 +16,7 @@ struct gui_scene_structure
     bool surface = true;
     bool billboards = true;
     bool bubbles = true;
+    bool mario = true;
     bool display_keyframe = false;
     bool display_polygon = false;
 };

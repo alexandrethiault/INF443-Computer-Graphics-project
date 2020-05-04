@@ -34,7 +34,7 @@ void cardinal_spline_interpolation(float t, buffer<vec3t>& keyframes, float mu, 
     d2p = (12 * s - 6) * p1 + (6 * s - 4) * d1 + (-12 * s + 6) * p2 + (6 * s - 2) * d2;
 }
 
-void flight_model::setup_flight(std::map<std::string,GLuint>& shaders, scene_structure& scene, character_structure c_)
+void flight_model::setup_flight(std::map<std::string,GLuint>& shaders, scene_structure& scene, character_structure* c_)
 {
     std::fstream kf("scenes/shared_assets/coords/keyframes.txt");
     int n; kf >> n;
@@ -65,11 +65,11 @@ void flight_model::setup_flight(std::map<std::string,GLuint>& shaders, scene_str
     picked_object=-1;
 }
 
-void flight_model::draw_path(std::map<std::string,GLuint>& shaders, scene_structure& scene, bool kf, bool pg)
+void flight_model::simulate()
 {
     timer.update();
     const float t = timer.t;
-    if (t<timer.t_min+0.1f) trajectory.clear();
+    if (t < timer.t_min + 0.1f) trajectory.clear();
 
     const float mu = 0.5f;
     cardinal_spline_interpolation(t, keyframes, mu, p, dp, d2p);
@@ -78,14 +78,17 @@ void flight_model::draw_path(std::map<std::string,GLuint>& shaders, scene_struct
     trajectory.add_point(p);
 
     // Draw current position
-    float inclination = 0.2f * dot(mat3{ 0,1,0,-1,0,0,0,0,0 } * dp, d2p);
+    float inclination = 0.2f * dot(mat3{ 0,1,0,-1,0,0,0,0,0 } *dp, d2p);
     if (inclination > 0.6f) inclination = 0.6f;
     if (inclination < -0.6f) inclination = -0.6f;
-    character.set_translation(p);
-    character.set_rotation(rotation_to_vector_mat3(dp) *
+    (*character).set_translation(p);
+    (*character).set_rotation(rotation_to_vector_mat3(dp) *
         rotation_from_axis_angle_mat3({ 1,0,0 }, inclination));
+}
+
+void flight_model::draw_path(std::map<std::string, GLuint>& shaders, scene_structure& scene, bool kf, bool pg)
+    {
     glBindTexture(GL_TEXTURE_2D, scene.texture_white);
-    character.draw(shaders, scene, true, false);
     //draw(point_visual, scene.camera); // à remplacer par Mario
 
     // Draw moving point trajectory

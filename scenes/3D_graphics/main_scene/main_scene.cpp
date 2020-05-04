@@ -15,6 +15,7 @@ void scene_model::setup_data(std::map<std::string,GLuint>& shaders, scene_struct
     scene.camera.apply_rotation(0,0,2,1.2f);
 
     chomp.init({ -2.545635f, 0.232917f, 0.782936f }); // Position of the bottom of the Chomp
+
     character.init({0,0,0});
 
     map.loadMTL("scenes/shared_assets/models/Bob-omb/Bob-omb Battlefield.mtl");
@@ -25,7 +26,8 @@ void scene_model::setup_data(std::map<std::string,GLuint>& shaders, scene_struct
     star.create_star();
 
     bubbles.setup(shaders, scene);
-    flight.setup_flight(shaders, scene, character);
+
+    flight.setup_flight(shaders, scene, &character);
 
     timer.scale = 1.0f;
     timer.t_max = 20.0f;
@@ -40,16 +42,18 @@ void scene_model::frame_draw(std::map<std::string, GLuint>& shaders, scene_struc
     const float dt = std::min(0.03f, timer_event.update());
 
     chomp.move(flight.p, t, ((t < last_t) ? timer.t_max - timer.t_min : 0) + t - last_t);
-    character.move(t, ((t < last_t) ? timer.t_max - timer.t_min : 0) + t - last_t);
+    //character.move(t, ((t < last_t) ? timer.t_max - timer.t_min : 0) + t - last_t);
     star.move(t);
     bubbles.simulate();
+    flight.simulate(); // Moves the character to the current flight position
 
     glEnable(GL_POLYGON_OFFSET_FILL); // avoids z-fighting when displaying wireframe
     chomp.draw_nobillboards(shaders, scene, gui_scene.surface, gui_scene.wireframe);
     map.draw_nobillboards(shaders, scene, gui_scene.surface, gui_scene.wireframe); // Including sky and 5 posts
     star.draw_nobillboards(shaders, scene, gui_scene.surface, gui_scene.wireframe); // 2 stars
-    bubbles.draw_bubbles(shaders, scene, gui_scene.surface, gui_scene.wireframe);
     flight.draw_path(shaders, scene, gui_scene.display_keyframe, gui_scene.display_polygon);
+    if (gui_scene.bubbles) bubbles.draw_bubbles(shaders, scene, gui_scene.surface, gui_scene.wireframe);
+    if (gui_scene.mario) character.draw(shaders, scene, gui_scene.surface, gui_scene.wireframe);
 
     //// BILLBOARDS ALWAYS LAST ////
 
@@ -94,19 +98,19 @@ void scene_model::set_gui()
 
     ImGui::Spacing();
     ImGui::SliderFloat("Time", &timer.t, timer.t_min, timer.t_max);
-    ImGui::SliderFloat("Time scale", &timer.scale, 0.1f, 3.0f);
+    ImGui::SliderFloat("Time scale", &timer.scale, 0.01f, 3.0f);
 
-    ImGui::SliderFloat("Bubbles time scale", &bubbles.timerevent.scale, 0.1f, 3.0f);
-    if (ImGui::Button("Stop bubbles")) bubbles.timerevent.stop(); ImGui::SameLine();
-    if (ImGui::Button("Restart bubbles")) bubbles.timerevent.start();
-
-    ImGui::Text("Mario: "); ImGui::SameLine();
+    ImGui::Checkbox("Mario", &gui_scene.mario); ImGui::SameLine();
     ImGui::Checkbox("Keyframes", &gui_scene.display_keyframe); ImGui::SameLine();
-    ImGui::Checkbox("Polygon", &gui_scene.display_polygon);
+    ImGui::Checkbox("Polygon", &gui_scene.display_polygon); ImGui::SameLine();
+    ImGui::Checkbox("Bubbles", &gui_scene.bubbles);
 
     ImGui::SliderFloat("Mario's time", &flight.timer.t, flight.timer.t_min, flight.timer.t_max);
-    ImGui::SliderFloat("Mario timer scale", &flight.timer.scale, 0.1f, 3.0f);
+    ImGui::SliderFloat("Mario timer scale", &flight.timer.scale, 0.01f, 3.0f);
 
+    ImGui::SliderFloat("Bubbles time scale", &bubbles.timerevent.scale, 0.01f, 3.0f);
+    if (ImGui::Button("Stop bubbles")) bubbles.timerevent.stop(); ImGui::SameLine();
+    if (ImGui::Button("Restart bubbles")) bubbles.timerevent.start(); ImGui::SameLine();
     if (ImGui::Button("Print Keyframe")) {
         std::cout << "keyframe_position:" << std::endl;
         for (size_t k = 0; k < flight.keyframes.size(); ++k) 

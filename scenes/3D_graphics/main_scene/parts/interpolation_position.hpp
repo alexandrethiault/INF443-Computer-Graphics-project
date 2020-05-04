@@ -12,7 +12,8 @@ struct vec3t {
 
 struct flight_model
 {
-    void setup_flight(std::map<std::string,GLuint>& shaders, scene_structure& scene, character_structure c_);
+    void setup_flight(std::map<std::string,GLuint>& shaders, scene_structure& scene, character_structure* c_);
+    void simulate();
     void draw_path(std::map<std::string,GLuint>& shaders, scene_structure& scene, bool kf, bool pg);
     void mouse_click(scene_structure& scene, GLFWwindow* window);
     void mouse_move(scene_structure& scene, GLFWwindow* window);
@@ -26,7 +27,7 @@ struct flight_model
     vcl::curve_dynamic_drawable trajectory;                // Draw the trajectory of the moving point as a curve
     vcl::vec3 p, dp, d2p; // position, difference since last time
 
-    character_structure character;
+    character_structure* character;
 
     // Store the index of a selected sphere
     int picked_object;
