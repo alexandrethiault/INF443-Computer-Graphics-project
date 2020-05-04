@@ -60,9 +60,6 @@ void character_structure::init(const vec3& center)
         return;
     }
 
-    for (int i = 0; i < (int)part_name.size(); i++)
-        std::cout << part_name[i] << std::endl;
-
     hierarchy.add(mario[find_mesh_index("Corps")], "Corps");
     hierarchy.add(mario[find_mesh_index("Boutons_GU")], "Boutons_GU", "Corps");
     hierarchy.add(mario[find_mesh_index("Bassin")], "Bassin", "Corps");
@@ -274,9 +271,9 @@ void character_structure::loadOBJ(const char* path)
             tri.texture_uv.push_back({ temp_uvs[uvIndex[0] - 1].x,1-temp_uvs[uvIndex[0] - 1].y });
             tri.texture_uv.push_back({ temp_uvs[uvIndex[1] - 1].x,1-temp_uvs[uvIndex[1] - 1].y });
             tri.texture_uv.push_back({ temp_uvs[uvIndex[2] - 1].x,1-temp_uvs[uvIndex[2] - 1].y });
-            tri.normal.push_back({ -temp_normals[nIndex[0] - 1].z,-temp_normals[nIndex[0] - 1].x,-temp_normals[nIndex[0] - 1].y });
-            tri.normal.push_back({ -temp_normals[nIndex[1] - 1].z,-temp_normals[nIndex[1] - 1].x,-temp_normals[nIndex[1] - 1].y });
-            tri.normal.push_back({ -temp_normals[nIndex[2] - 1].z,-temp_normals[nIndex[2] - 1].x,-temp_normals[nIndex[2] - 1].y });
+            tri.normal.push_back({ temp_normals[nIndex[0] - 1].z,temp_normals[nIndex[0] - 1].x,temp_normals[nIndex[0] - 1].y });
+            tri.normal.push_back({ temp_normals[nIndex[1] - 1].z,temp_normals[nIndex[1] - 1].x,temp_normals[nIndex[1] - 1].y });
+            tri.normal.push_back({ temp_normals[nIndex[2] - 1].z,temp_normals[nIndex[2] - 1].x,temp_normals[nIndex[2] - 1].y });
             tri.connectivity.push_back({ nbtri++,nbtri++,nbtri++ });
         }
     }
