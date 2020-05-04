@@ -1,15 +1,9 @@
 #pragma once
 
 #include "main/scene_base/base.hpp"
+#include "scenes/3D_graphics/main_scene/parts/mtltexture.hpp"
 
 #ifdef MAIN_SCENE
-
-struct mtltexture {
-    float Ns = -1, Ni = -1, d = -1;
-    vcl::vec3 Ka, Kd, Ks, Ke;
-    int illum = -1;
-    std::string name, map_Kd;
-};
 
 struct map_structure {
     vcl::mesh_drawable sky, post, post_top, billboard, shadow;

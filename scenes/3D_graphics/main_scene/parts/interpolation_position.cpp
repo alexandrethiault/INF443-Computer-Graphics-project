@@ -34,7 +34,7 @@ void cardinal_spline_interpolation(float t, buffer<vec3t>& keyframes, float mu, 
     d2p = (12 * s - 6) * p1 + (6 * s - 4) * d1 + (-12 * s + 6) * p2 + (6 * s - 2) * d2;
 }
 
-void flight_model::setup_flight(std::map<std::string,GLuint>& shaders, scene_structure& scene)
+void flight_model::setup_flight(std::map<std::string,GLuint>& shaders, scene_structure& scene, character_structure c_)
 {
     std::fstream kf("scenes/shared_assets/coords/keyframes.txt");
     int n; kf >> n;
@@ -45,11 +45,7 @@ void flight_model::setup_flight(std::map<std::string,GLuint>& shaders, scene_str
     // Modify time stamps so that the particle keeps the approximate same speed 
     equalize_speed(0.6f, true);
 
-    // Prepare the visual elements
-    point_visual = mesh_primitive_parallelepiped({ -2,-2,-0.5f }, { 4,0,0 }, { 0,4,0 });
-    point_visual.shader = shaders["mesh"];
-    point_visual.uniform.color = {1,1,1};
-    point_visual.uniform.transform.scaling = 0.04f;
+    character = c_;
 
     keyframe_visual = mesh_primitive_sphere();
     keyframe_visual.shader = shaders["mesh"];
@@ -85,11 +81,12 @@ void flight_model::draw_path(std::map<std::string,GLuint>& shaders, scene_struct
     float inclination = 0.2f * dot(mat3{ 0,1,0,-1,0,0,0,0,0 } * dp, d2p);
     if (inclination > 0.6f) inclination = 0.6f;
     if (inclination < -0.6f) inclination = -0.6f;
-    point_visual.uniform.transform.translation = p; // à remplacer par Mario
-    point_visual.uniform.transform.rotation = rotation_to_vector_mat3(dp) *
-        rotation_from_axis_angle_mat3({ 1,0,0 }, inclination); // à remplacer par Mario
+    character.set_translation(p);
+    character.set_rotation(rotation_to_vector_mat3(dp) *
+        rotation_from_axis_angle_mat3({ 1,0,0 }, inclination));
     glBindTexture(GL_TEXTURE_2D, scene.texture_white);
-    draw(point_visual, scene.camera); // à remplacer par Mario
+    character.draw(shaders, scene, true, false);
+    //draw(point_visual, scene.camera); // à remplacer par Mario
 
     // Draw moving point trajectory
     if (pg) trajectory.draw(shaders["curve"], scene.camera);

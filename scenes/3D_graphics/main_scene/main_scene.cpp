@@ -15,6 +15,7 @@ void scene_model::setup_data(std::map<std::string,GLuint>& shaders, scene_struct
     scene.camera.apply_rotation(0,0,2,1.2f);
 
     chomp.init({ -2.545635f, 0.232917f, 0.782936f }); // Position of the bottom of the Chomp
+    character.init({0,0,0});
 
     map.loadMTL("scenes/shared_assets/models/Bob-omb/Bob-omb Battlefield.mtl");
     map.loadOBJ("scenes/shared_assets/models/Bob-omb/Bob-omb Battlefield.obj");
@@ -24,7 +25,7 @@ void scene_model::setup_data(std::map<std::string,GLuint>& shaders, scene_struct
     star.create_star();
 
     bubbles.setup(shaders, scene);
-    flight.setup_flight(shaders, scene);
+    flight.setup_flight(shaders, scene, character);
 
     timer.scale = 1.0f;
     timer.t_max = 20.0f;
@@ -39,6 +40,7 @@ void scene_model::frame_draw(std::map<std::string, GLuint>& shaders, scene_struc
     const float dt = std::min(0.03f, timer_event.update());
 
     chomp.move(flight.p, t, ((t < last_t) ? timer.t_max - timer.t_min : 0) + t - last_t);
+    character.move(t, ((t < last_t) ? timer.t_max - timer.t_min : 0) + t - last_t);
     star.move(t);
     bubbles.simulate();
 

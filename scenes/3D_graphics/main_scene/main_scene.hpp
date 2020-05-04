@@ -5,6 +5,7 @@
 #include "scenes/3D_graphics/main_scene/parts/map.hpp"
 #include "scenes/3D_graphics/main_scene/parts/star.hpp"
 #include "scenes/3D_graphics/main_scene/parts/bubble.hpp"
+#include "scenes/3D_graphics/main_scene/parts/character.hpp"
 #include "scenes/3D_graphics/main_scene/parts/interpolation_position.hpp"
 
 #ifdef MAIN_SCENE
@@ -29,6 +30,7 @@ struct scene_model : scene_base
     void set_gui();
     
     chomp_structure chomp;
+    character_structure character;
     map_structure map;
     star_structure star;
     bubbles_structure bubbles;
