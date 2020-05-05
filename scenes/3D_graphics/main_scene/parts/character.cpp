@@ -50,9 +50,9 @@ void character_structure::init(const vec3& center)
     hierarchy.add(mario[find_mesh_index("Hair_Piece")], "Hair_Piece", "Skin");
     hierarchy.add(mario[find_mesh_index("Eyes")], "Eyes", "Skin");
     hierarchy.add(mario[find_mesh_index("Bicorne")], "Bicorne", "Skin");
-    hierarchy.add(mario[find_mesh_index("Cocbleu")], "Cocbleu", "Bicorne");
-    hierarchy.add(mario[find_mesh_index("Cocrouge")], "Cocrouge", "Bicorne");
-    hierarchy.add(mario[find_mesh_index("Cocblanc")], "Cocblanc", "Bicorne");
+    hierarchy.add(mario[find_mesh_index("CoqBleu")], "CoqBleu", "Bicorne");
+    hierarchy.add(mario[find_mesh_index("CoqRouge")], "CoqRouge", "Bicorne");
+    hierarchy.add(mario[find_mesh_index("CoqBlanc")], "CoqBlanc", "Bicorne");
     hierarchy.add(mario[find_mesh_index("Broche")], "Broche", "Bicorne");
     hierarchy.add(mario[find_mesh_index("Bouton_Bicorne")], "Bouton_Bicorne", "Bicorne");
     hierarchy.add(mario[find_mesh_index("Moustache")], "Moustache", "Skin");
@@ -67,7 +67,13 @@ void character_structure::draw(std::map<std::string, GLuint>& shaders, scene_str
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE); // avoids sampling artifacts
     
     for (int i = 0; i < (int)part_name.size(); i++) {
-        glBindTexture(GL_TEXTURE_2D, mario_textures[texture_indices[i]]);
+        if (mario_textures[texture_indices[i]] == -1) {
+            glBindTexture(GL_TEXTURE_2D, scene.texture_white);
+            hierarchy[part_name[i]].element.uniform.color = mario_mtl[texture_indices[i]].Kd;
+        }
+        else {
+            glBindTexture(GL_TEXTURE_2D, mario_textures[texture_indices[i]]);
+        }
         hierarchy[part_name[i]].global_transform.scaling = .001f;
         if (surf) draw_hierarchy_element(hierarchy[part_name[i]], scene.camera, shaders["mesh"]);
         if (wf) draw_hierarchy_element(hierarchy[part_name[i]], scene.camera, shaders["wireframe"]);
@@ -76,30 +82,28 @@ void character_structure::draw(std::map<std::string, GLuint>& shaders, scene_str
     glBindTexture(GL_TEXTURE_2D, scene.texture_white);
 }
 
-void character_structure::move(float t, float dt)
+/*void character_structure::move(float t, float dt)
 {
-    // fonction o� on d�cide du mouvement (en fonction de t, dt, input ?)
-    // peut-�tre � faire seulement dans interpolation_position.cpp
     if (dt > 0.1f) dt = 0.1f;
 
+    hierarchy.update_local_to_global_coordinates();
+}*/
 
-    //hierarchy["Corps"].transform.rotation = R;
-
-    //hierarchy.update_local_to_global_coordinates();
-}
-
-void character_structure::set_translation(vcl::vec3& p) {
+void character_structure::set_translation(vcl::vec3& p)
+{
     hierarchy["Corps"].transform.translation = p;
     hierarchy.update_local_to_global_coordinates();
 }
 
 
-void character_structure::set_rotation(vcl::mat3& R) {
+void character_structure::set_rotation(vcl::mat3& R)
+{
     hierarchy["Corps"].transform.rotation = R * rotation_from_axis_angle_mat3({0, 1, 0}, PI/2.);
     hierarchy.update_local_to_global_coordinates();
 }
 
-int character_structure::find_mesh_index(std::string name) {
+int character_structure::find_mesh_index(std::string name)
+{
     int i = 0;
     while(i < part_name.size() && part_name[i] != name)
         i++;
@@ -121,6 +125,7 @@ void character_structure::loadMTL(const char* path)
             char name[128];
             fscanf(file, "%s\n", name);
             mario_mtl[size - 1].name = name;
+            mario_textures.push_back(-1);
         }
         else if (strcmp(lineHeader, "Ns") == 0) {
             fscanf(file, "%f\n", &(mario_mtl[size - 1].Ns));
@@ -150,10 +155,10 @@ void character_structure::loadMTL(const char* path)
             char map_Kd[128];
             fscanf(file, "%s\n", map_Kd);
             mario_mtl[size - 1].map_Kd = map_Kd;
-            mario_textures.push_back(create_texture_gpu(image_load_png(mario_dir + mario_mtl[size - 1].map_Kd)));
+            mario_textures[size - 1] = create_texture_gpu(image_load_png(mario_dir + mario_mtl[size - 1].map_Kd));
         }
     }
-    std::cout << "\tMario MTL loaded\t[OK]" << std::endl;
+    std::cout << "\t\t[OK] Mario MTL loaded" << std::endl;
 }
 
 void character_structure::loadOBJ(const char* path)
@@ -180,7 +185,7 @@ void character_structure::loadOBJ(const char* path)
         else if (strcmp(lineHeader, "g") == 0) {
             if (nbtri) {
                 mario.push_back(tri); // conversion mesh -> mesh_drawable
-                mario[mario.size() - 1].uniform.shading = { 0.5f, mario_mtl[current_mtl_index].Kd.x, 0 };
+                mario[mario.size() - 1].uniform.shading = { 0.5f, 1, mario_mtl[current_mtl_index].Ns };
                 std::string name = std::string(current_name);
                 part_name.push_back(name);
                 texture_indices.push_back(current_mtl_index);
@@ -229,13 +234,12 @@ void character_structure::loadOBJ(const char* path)
     }
     if (nbtri) {
         mario.push_back(tri); // conversion mesh -> mesh_drawable
-        mario[mario.size() - 1].uniform.shading = { mario_mtl[current_mtl_index].Ka.x, 0, mario_mtl[current_mtl_index].Ns };
+        //mario[mario.size() - 1].uniform.shading = { mario_mtl[current_mtl_index].Ka.x, 0, mario_mtl[current_mtl_index].Ns };
         texture_indices.push_back(current_mtl_index);
         std::string name = std::string(current_name);
         part_name.push_back(name);
     }
-    std::cout << "\tMario OBJ loaded\t[OK]" << std::endl;
+    std::cout << "\t\t[OK] Mario OBJ loaded" << std::endl;
 }
 
 #endif
-

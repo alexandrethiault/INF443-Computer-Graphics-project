@@ -95,7 +95,7 @@ void map_structure::loadMTL(const char* path)
             map_textures.push_back(create_texture_gpu(image_load_png(map_dir + map_mtl[size - 1].map_Kd)));
         }
     }
-    std::cout << "\tLevel MTL loaded\t[OK]" << std::endl;
+    std::cout << "\t\t[OK] Level MTL loaded" << std::endl;
 }
 
 void map_structure::loadOBJ(const char* path)
@@ -166,7 +166,7 @@ void map_structure::loadOBJ(const char* path)
         map[map.size() - 1].uniform.shading = { map_mtl[current_mtl_index].Ka.x, 0, map_mtl[current_mtl_index].Ns };
         texture_indices.push_back(current_mtl_index);
     }
-    std::cout << "\tLevel OBJ loaded\t[OK]" << std::endl;
+    std::cout << "\t\t[OK] Level OBJ loaded" << std::endl;
 }
 
 
