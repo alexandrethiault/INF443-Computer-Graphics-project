@@ -4,6 +4,7 @@
 #include "scenes/3D_graphics/main_scene/parts/chomp.hpp"
 #include "scenes/3D_graphics/main_scene/parts/map.hpp"
 #include "scenes/3D_graphics/main_scene/parts/star.hpp"
+#include "scenes/3D_graphics/main_scene/parts/bridge.hpp"
 #include "scenes/3D_graphics/main_scene/parts/bubble.hpp"
 #include "scenes/3D_graphics/main_scene/parts/character.hpp"
 #include "scenes/3D_graphics/main_scene/parts/interpolation_position.hpp"
@@ -34,6 +35,7 @@ struct scene_model : scene_base
     character_structure character;
     map_structure map;
     star_structure star;
+    bridge_structure bridge;
     bubbles_structure bubbles;
     flight_model flight;
 

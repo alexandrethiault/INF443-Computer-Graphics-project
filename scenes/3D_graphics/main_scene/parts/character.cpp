@@ -234,7 +234,7 @@ void character_structure::loadOBJ(const char* path)
     }
     if (nbtri) {
         mario.push_back(tri); // conversion mesh -> mesh_drawable
-        //mario[mario.size() - 1].uniform.shading = { mario_mtl[current_mtl_index].Ka.x, 0, mario_mtl[current_mtl_index].Ns };
+        mario[mario.size() - 1].uniform.shading = { 0.5f, 1, mario_mtl[current_mtl_index].Ns };
         texture_indices.push_back(current_mtl_index);
         std::string name = std::string(current_name);
         part_name.push_back(name);

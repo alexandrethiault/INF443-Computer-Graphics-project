@@ -25,7 +25,9 @@ void scene_model::setup_data(std::map<std::string,GLuint>& shaders, scene_struct
 
     star.create_star();
 
-    bubbles.setup(shaders, scene);
+    bridge.setup(vec3{ -1.736f, 3.139f, 0.728f }, vec3{ -1.28f,-1.28f,0 }, vec3{ 0.256f,-0.256f,0 }, vec3{ 0,0,0.054f });
+
+    bubbles.setup();
 
     flight.setup_flight(shaders, scene, &character);
 
@@ -44,6 +46,7 @@ void scene_model::frame_draw(std::map<std::string, GLuint>& shaders, scene_struc
     chomp.move(flight.p, t, ((t < last_t) ? timer.t_max - timer.t_min : 0) + t - last_t);
     //character.move(t, ((t < last_t) ? timer.t_max - timer.t_min : 0) + t - last_t);
     star.move(t);
+    bridge.move(t);
     bubbles.simulate();
     flight.simulate(); // Moves the character to the current flight position
 
@@ -52,6 +55,7 @@ void scene_model::frame_draw(std::map<std::string, GLuint>& shaders, scene_struc
     map.draw_nobillboards(shaders, scene, gui_scene.surface, gui_scene.wireframe); // Including sky and 5 posts
     star.draw_nobillboards(shaders, scene, gui_scene.surface, gui_scene.wireframe); // 2 stars
     flight.draw_path(shaders, scene, gui_scene.display_keyframe, gui_scene.display_polygon);
+    bridge.draw_bridge(shaders, scene, gui_scene.surface, gui_scene.wireframe);
     if (gui_scene.bubbles) bubbles.draw_bubbles(shaders, scene, gui_scene.surface, gui_scene.wireframe);
     if (gui_scene.mario) character.draw(shaders, scene, gui_scene.surface, gui_scene.wireframe);
 

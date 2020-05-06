@@ -28,7 +28,7 @@ struct bubble_structure
 
 struct bubbles_structure
 {
-    void setup(std::map<std::string,GLuint>& shaders, scene_structure& scene);
+    void setup();
     void draw_bubbles(std::map<std::string,GLuint>& shaders, scene_structure& scene, bool surf, bool wf);
     void simulate();
 

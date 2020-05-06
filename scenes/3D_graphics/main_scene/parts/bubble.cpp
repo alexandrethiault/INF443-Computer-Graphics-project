@@ -10,7 +10,7 @@ using namespace vcl;
 std::default_random_engine generator_bubbles;
 std::uniform_real_distribution<float> distrib_bubbles(0.0f,1.0f);
 
-void bubbles_structure::setup(std::map<std::string,GLuint>& , scene_structure& scene)
+void bubbles_structure::setup()
 {
     // Create mesh for particles represented as spheres
     radius = 0.1f;

@@ -131,7 +131,7 @@ void map_structure::loadOBJ(const char* path)
         else if (strcmp(lineHeader, "usemtl") == 0) {
             if (nbtri) {
                 map.push_back(tri); // conversion mesh -> mesh_drawable
-                map[map.size() - 1].uniform.shading = { 0.5f, map_mtl[current_mtl_index].Kd.x, 0 };
+                map[map.size() - 1].uniform.shading = { 0.7f, 0.3f, 0 };
                 texture_indices.push_back(current_mtl_index);
             }
             fscanf(file, "%s\n", current_mtl);
@@ -163,7 +163,7 @@ void map_structure::loadOBJ(const char* path)
     }
     if (nbtri) {
         map.push_back(tri); // conversion mesh -> mesh_drawable
-        map[map.size() - 1].uniform.shading = { map_mtl[current_mtl_index].Ka.x, 0, map_mtl[current_mtl_index].Ns };
+        map[map.size() - 1].uniform.shading = { 0.7f, 0.3f, 0 };
         texture_indices.push_back(current_mtl_index);
     }
     std::cout << "\t\t[OK] Level OBJ loaded" << std::endl;
