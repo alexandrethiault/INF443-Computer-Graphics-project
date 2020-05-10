@@ -41,10 +41,12 @@ struct character_structure
     std::vector<int> texture_indices;
     std::vector<std::string> part_name;
     std::vector<GLuint> mario_textures;
+    std::map<std::string, vcl::vec3> position_centres;
 };
 
 struct scene_model : scene_base
 {
+    void keyboard_input(scene_structure& scene, GLFWwindow* window, int key, int scancode, int action, int mods);
     void setup_data(std::map<std::string,GLuint>& shaders, scene_structure& scene, gui_structure& gui);
     void frame_draw(std::map<std::string,GLuint>& shaders, scene_structure& scene, gui_structure& gui);
     void set_gui();

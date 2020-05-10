@@ -1,6 +1,7 @@
 
 #include "character.hpp"
 #include <string>
+#include <fstream>
 #include <algorithm>
 
 #ifdef MAIN_SCENE
@@ -15,6 +16,19 @@ void character_structure::init(const vec3& center)
     if (false) {
         std::cout << "Tentative de re-initialiser un mario deja initialise." << std::endl;
         return;
+    }
+
+    scale = 0.1f;
+
+    int n;
+    vec3 pos;
+    std::string name;
+    std::fstream centres("scenes/shared_assets/coords/mario_centres.txt");
+
+    centres >> n;
+    for (int i = 0; i < n; i++) {
+        centres >> name >> pos.x >> pos.y >> pos.z;
+        position_centres[name] = pos;
     }
 
     loadMTL("scenes/shared_assets/models/Mario GU/V13.mtl");
@@ -82,12 +96,42 @@ void character_structure::draw(std::map<std::string, GLuint>& shaders, scene_str
     glBindTexture(GL_TEXTURE_2D, scene.texture_white);
 }
 
-/*void character_structure::move(float t, float dt)
+void character_structure::move(float t, float dt)
 {
     if (dt > 0.1f) dt = 0.1f;
 
+    mat3 RL_1 = rotation_from_axis_angle_mat3({ 1, 0, 0}, - 8.f * PI / 180.f);
+    mat3 RL_2 = rotation_from_axis_angle_mat3({ 0, 0, 1 }, - 10.f * PI / 180.f);
+    mat3 RL_3 = rotation_from_axis_angle_mat3({ 0, 1, 0 }, 10.f * PI / 180.f);
+    mat3 LL_1 = rotation_from_axis_angle_mat3({ 1, 0, 0 }, 8.f * PI / 180.f);
+    mat3 LL_2 = rotation_from_axis_angle_mat3({ 0, 0, 1 }, 10.f * PI / 180.f);
+    mat3 LL_3 = RL_3;
+
+    mat3 RA = rotation_from_axis_angle_mat3({ 1, 0, 0 }, -37.f * PI / 180.f);
+    mat3 LA = rotation_from_axis_angle_mat3({ 1, 0, 0 }, 37.f * PI / 180.f);
+
+    mat3 T = rotation_from_axis_angle_mat3({ 0, 1, 0 }, -43.36f * PI / 180.f);
+
+    hierarchy["Right_Upper_Leg"].transform.rotation = RL_1 * RL_2 * RL_3;
+    hierarchy["Right_Upper_Leg"].transform.translation = scale * (position_centres["Right_Upper_Leg"] - RL_1 * RL_2 * RL_3 * position_centres["Right_Upper_Leg"]);
+    hierarchy["Left_Upper_Leg"].transform.rotation = LL_1 * LL_2 * LL_3;
+    hierarchy["Left_Upper_Leg"].transform.translation = scale * (position_centres["Left_Upper_Leg"] - LL_1 * LL_2 * LL_3 * position_centres["Left_Upper_Leg"]);
+
+    hierarchy["Right_Lower_Leg"].transform.rotation = RL_1 * RL_2 * RL_3 * RL_3;
+    hierarchy["Right_Lower_Leg"].transform.translation = scale * (position_centres["Right_Lower_Leg"] - RL_1 * RL_2 * RL_3 * RL_3 * position_centres["Right_Lower_Leg"]);
+    hierarchy["Left_Lower_Leg"].transform.rotation = LL_1 * LL_2 * LL_3 * LL_3;
+    hierarchy["Left_Lower_Leg"].transform.translation = scale * (position_centres["Left_Lower_Leg"] - LL_1 * LL_2 * LL_3 * LL_3 * position_centres["Left_Lower_Leg"]);
+
+    hierarchy["Right_Upper_Arm"].transform.rotation = RA;
+    hierarchy["Right_Upper_Arm"].transform.translation = scale * (position_centres["Right_Upper_Arm"] - RA * position_centres["Right_Upper_Arm"]);
+    hierarchy["Left_Upper_Arm"].transform.rotation = LA;
+    hierarchy["Left_Upper_Arm"].transform.translation = scale * (position_centres["Left_Upper_Arm"] - LA * position_centres["Left_Upper_Arm"]);
+
+    hierarchy["Skin"].transform.rotation = T;
+    hierarchy["Skin"].transform.translation = scale * (position_centres["Skin"] - T * position_centres["Skin"]);
+
     hierarchy.update_local_to_global_coordinates();
-}*/
+}
 
 void character_structure::set_translation(vcl::vec3& p)
 {

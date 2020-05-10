@@ -2,7 +2,7 @@
 
 // Indicate here which exercise should be currently considered using its define keyword
 
-#define MAIN_SCENE
+ #define MAIN_SCENE
 // #define SCENE_BATTLEFIELD                     // map/modeling
 // #define SCENE_ARTICULATED_HIERARCHY           // character/articulated_hierarchy
 // #define SCENE_INTERPOLATION_POSITION          // character/interpolation_position
@@ -12,3 +12,4 @@
 // #define SCENE_STAR                            // other/star
 // #define SCENE_BUBBLE                          // simulation/bubble
 // #define SCENE_BRIDGE                          // simulation/bridge
+// #define SCENE_BOBOMB							 // bobomb/bobomb

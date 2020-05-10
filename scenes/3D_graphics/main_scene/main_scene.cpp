@@ -44,7 +44,7 @@ void scene_model::frame_draw(std::map<std::string, GLuint>& shaders, scene_struc
     const float dt = std::min(0.03f, timer_event.update());
 
     chomp.move(flight.p, t, ((t < last_t) ? timer.t_max - timer.t_min : 0) + t - last_t);
-    //character.move(t, ((t < last_t) ? timer.t_max - timer.t_min : 0) + t - last_t);
+    character.move(t, ((t < last_t) ? timer.t_max - timer.t_min : 0) + t - last_t);
     star.move(t);
     bridge.move(t);
     bubbles.simulate();

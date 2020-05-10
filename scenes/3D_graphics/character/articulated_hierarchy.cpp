@@ -1,6 +1,7 @@
 
 #include "articulated_hierarchy.hpp"
 #include <string>
+#include <fstream>
 #include <algorithm>
 
 // AVANCEMENT : juste un squelette pour avoir un code qui suit vaguement la forme des chomp_xxx.cpp
@@ -13,19 +14,23 @@ const std::string mario_dir = "scenes/shared_assets/models/Mario GU/";
 const std::string obj_mario = "V13";
 const float PI = 3.14159f;
 
+// Press P to print the position of the center of the moving referential ("frame camera")
+void scene_model::keyboard_input(scene_structure& scene, GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+    if (key == GLFW_KEY_P && action == GLFW_PRESS)
+        std::cout << scene.frame_camera.uniform.transform.translation << std::endl;
+}
+
 void scene_model::setup_data(std::map<std::string, GLuint>& shaders, scene_structure& scene, gui_structure&)
 {
     scene.camera.camera_type = camera_control_spherical_coordinates;
-    scene.camera.scale = 30.0f;
+    scene.camera.scale = 3.0f;
     scene.camera.apply_rotation(0, 0, 0, 1.2f);
 
     demo_ground = mesh_primitive_disc(20);
     //demo_ground.uniform.transform.translation.z = -5.f;
     demo_ground.uniform.color = { 1,1,0.5f };
     demo_ground.uniform.shading = { 1,0,0 };
-
-    character.loadMTL("scenes/shared_assets/models/Mario GU/V13.mtl");
-    character.loadOBJ("scenes/shared_assets/models/Mario GU/V13.obj");
 
     character.init({ 0,0,0 });
     character.hierarchy.set_shader_for_all_elements(shaders["mesh"]);
@@ -42,7 +47,7 @@ void scene_model::frame_draw(std::map<std::string,GLuint>& shaders, scene_struct
 
     glEnable(GL_POLYGON_OFFSET_FILL);
 
-    draw(demo_ground, scene.camera, shaders["mesh"]);
+    //draw(demo_ground, scene.camera, shaders["mesh"]);
 
     character.move(t, ((t < last_t) ? timer.t_max - timer.t_min : 0) + t - last_t);
     character.draw(shaders, scene, gui_scene.surface, gui_scene.wireframe);
@@ -59,6 +64,20 @@ void character_structure::init(const vec3& center)
         std::cout << "Tentative de re-initialiser un mario deja initialise." << std::endl;
         return;
     }
+
+    int n;
+    vec3 pos;
+    std::string name;
+    std::fstream centres("scenes/shared_assets/coords/mario_centres.txt");
+
+    centres >> n;
+    for (int i = 0; i < n; i++) {
+        centres >> name >> pos.x >> pos.y >> pos.z;
+        position_centres[name] = pos;
+    }
+
+    loadMTL("scenes/shared_assets/models/Mario GU/V13.mtl");
+    loadOBJ("scenes/shared_assets/models/Mario GU/V13.obj");
 
     hierarchy.add(mario[find_mesh_index("Corps")], "Corps");
     hierarchy.add(mario[find_mesh_index("Boutons_GU")], "Boutons_GU", "Corps");
@@ -90,9 +109,9 @@ void character_structure::init(const vec3& center)
     hierarchy.add(mario[find_mesh_index("Hair_Piece")], "Hair_Piece", "Skin");
     hierarchy.add(mario[find_mesh_index("Eyes")], "Eyes", "Skin");
     hierarchy.add(mario[find_mesh_index("Bicorne")], "Bicorne", "Skin");
-    hierarchy.add(mario[find_mesh_index("Cocbleu")], "Cocbleu", "Bicorne");
-    hierarchy.add(mario[find_mesh_index("Cocrouge")], "Cocrouge", "Bicorne");
-    hierarchy.add(mario[find_mesh_index("Cocblanc")], "Cocblanc", "Bicorne");
+    hierarchy.add(mario[find_mesh_index("CoqBleu")], "CoqBleu", "Bicorne");
+    hierarchy.add(mario[find_mesh_index("CoqRouge")], "CoqRouge", "Bicorne");
+    hierarchy.add(mario[find_mesh_index("CoqBlanc")], "CoqBlanc", "Bicorne");
     hierarchy.add(mario[find_mesh_index("Broche")], "Broche", "Bicorne");
     hierarchy.add(mario[find_mesh_index("Bouton_Bicorne")], "Bouton_Bicorne", "Bicorne");
     hierarchy.add(mario[find_mesh_index("Moustache")], "Moustache", "Skin");
@@ -103,11 +122,17 @@ void character_structure::draw(std::map<std::string, GLuint>& shaders, scene_str
     // dessiner toutes les parties qui ne sont pas des billboards
     // copi� coll� de ce que j'ai fait pour le chomp
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); // avoids sampling artifacts
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE); // avoids sampling artifacts
-    
+    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); // avoids sampling artifacts
+    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE); // avoids sampling artifacts
+
     for (int i = 0; i < (int)part_name.size(); i++) {
-        glBindTexture(GL_TEXTURE_2D, mario_textures[texture_indices[i]]);
+        if (mario_textures[texture_indices[i]] == -1) {
+            glBindTexture(GL_TEXTURE_2D, scene.texture_white);
+            hierarchy[part_name[i]].element.uniform.color = mario_mtl[texture_indices[i]].Kd;
+        }
+        else {
+            glBindTexture(GL_TEXTURE_2D, mario_textures[texture_indices[i]]);
+        }
         hierarchy[part_name[i]].global_transform.scaling = .01f;
         if (surf) draw_hierarchy_element(hierarchy[part_name[i]], scene.camera, shaders["mesh"]);
         if (wf) draw_hierarchy_element(hierarchy[part_name[i]], scene.camera, shaders["wireframe"]);
@@ -116,22 +141,39 @@ void character_structure::draw(std::map<std::string, GLuint>& shaders, scene_str
     glBindTexture(GL_TEXTURE_2D, scene.texture_white);
 }
 
-bool cmpbillboard(vec3& u, vec3& v, vec3& cam_pos)
-{
-    float norm_u = norm(u - cam_pos);
-    float norm_v = norm(v - cam_pos);
-    return (norm_u > norm_v);
-}
-
 void character_structure::move(float t, float dt)
 {
-    // fonction o� on d�cide du mouvement (en fonction de t, dt, input ?)
-    // peut-�tre � faire seulement dans interpolation_position.cpp
     if (dt > 0.1f) dt = 0.1f;
 
-    mat3 R = rotation_from_axis_angle_mat3({0, 1, 0}, PI/2.);
+    mat3 RL_1 = rotation_from_axis_angle_mat3({ 1, 0, 0}, - 8.f * PI / 180.f);
+    mat3 RL_2 = rotation_from_axis_angle_mat3({ 0, 0, 1 }, - 10.f * PI / 180.f);
+    mat3 RL_3 = rotation_from_axis_angle_mat3({ 0, 1, 0 }, 10.f * PI / 180.f);
+    mat3 LL_1 = rotation_from_axis_angle_mat3({ 1, 0, 0 }, 8.f * PI / 180.f);
+    mat3 LL_2 = rotation_from_axis_angle_mat3({ 0, 0, 1 }, 10.f * PI / 180.f);
+    mat3 LL_3 = RL_3;
 
-    //hierarchy["Corps"].transform.rotation = R;
+    mat3 RA = rotation_from_axis_angle_mat3({ 1, 0, 0 }, -37.f * PI / 180.f);
+    mat3 LA = rotation_from_axis_angle_mat3({ 1, 0, 0 }, 37.f * PI / 180.f);
+
+    mat3 T = rotation_from_axis_angle_mat3({ 0, 1, 0 }, -43.36f * PI / 180.f);
+
+    hierarchy["Right_Upper_Leg"].transform.rotation = RL_1 * RL_2 * RL_3;
+    hierarchy["Right_Upper_Leg"].transform.translation = position_centres["Right_Upper_Leg"] - RL_1 * RL_2 * RL_3 * position_centres["Right_Upper_Leg"];
+    hierarchy["Left_Upper_Leg"].transform.rotation = LL_1 * LL_2 * LL_3;
+    hierarchy["Left_Upper_Leg"].transform.translation = position_centres["Left_Upper_Leg"] - LL_1 * LL_2 * LL_3 * position_centres["Left_Upper_Leg"];
+
+    hierarchy["Right_Lower_Leg"].transform.rotation = RL_1 * RL_2 * RL_3 * RL_3;
+    hierarchy["Right_Lower_Leg"].transform.translation = position_centres["Right_Lower_Leg"] - RL_1 * RL_2 * RL_3 * RL_3 * position_centres["Right_Lower_Leg"];
+    hierarchy["Left_Lower_Leg"].transform.rotation = LL_1 * LL_2 * LL_3 * LL_3;
+    hierarchy["Left_Lower_Leg"].transform.translation = position_centres["Left_Lower_Leg"] - LL_1 * LL_2 * LL_3 * LL_3 * position_centres["Left_Lower_Leg"];
+
+    hierarchy["Right_Upper_Arm"].transform.rotation = RA;
+    hierarchy["Right_Upper_Arm"].transform.translation = position_centres["Right_Upper_Arm"] - RA * position_centres["Right_Upper_Arm"];
+    hierarchy["Left_Upper_Arm"].transform.rotation = LA;
+    hierarchy["Left_Upper_Arm"].transform.translation = position_centres["Left_Upper_Arm"] - LA * position_centres["Left_Upper_Arm"];
+
+    hierarchy["Skin"].transform.rotation = T;
+    hierarchy["Skin"].transform.translation = position_centres["Skin"] - T * position_centres["Skin"];
 
     hierarchy.update_local_to_global_coordinates();
 }
@@ -171,6 +213,7 @@ void character_structure::loadMTL(const char* path)
             char name[128];
             fscanf(file, "%s\n", name);
             mario_mtl[size - 1].name = name;
+            mario_textures.push_back(-1);
         }
         else if (strcmp(lineHeader, "Ns") == 0) {
             fscanf(file, "%f\n", &(mario_mtl[size - 1].Ns));
@@ -200,10 +243,10 @@ void character_structure::loadMTL(const char* path)
             char map_Kd[128];
             fscanf(file, "%s\n", map_Kd);
             mario_mtl[size - 1].map_Kd = map_Kd;
-            mario_textures.push_back(create_texture_gpu(image_load_png(mario_dir + mario_mtl[size - 1].map_Kd)));
+            mario_textures[size - 1] = create_texture_gpu(image_load_png(mario_dir + mario_mtl[size - 1].map_Kd));
         }
     }
-    std::cout << "\tMTL loaded\t[OK]" << std::endl;
+    std::cout << "\t\t[OK] Mario MTL loaded" << std::endl;
 }
 
 void character_structure::loadOBJ(const char* path)
@@ -230,7 +273,7 @@ void character_structure::loadOBJ(const char* path)
         else if (strcmp(lineHeader, "g") == 0) {
             if (nbtri) {
                 mario.push_back(tri); // conversion mesh -> mesh_drawable
-                mario[mario.size() - 1].uniform.shading = { 0.5f, mario_mtl[current_mtl_index].Kd.x, 0 };
+                mario[mario.size() - 1].uniform.shading = { 0.5f, 1, mario_mtl[current_mtl_index].Ns };
                 std::string name = std::string(current_name);
                 part_name.push_back(name);
                 texture_indices.push_back(current_mtl_index);
@@ -268,9 +311,9 @@ void character_structure::loadOBJ(const char* path)
             tri.position.push_back({ temp_vertices[vIndex[0] - 1].z,temp_vertices[vIndex[0] - 1].x,temp_vertices[vIndex[0] - 1].y });
             tri.position.push_back({ temp_vertices[vIndex[1] - 1].z,temp_vertices[vIndex[1] - 1].x,temp_vertices[vIndex[1] - 1].y });
             tri.position.push_back({ temp_vertices[vIndex[2] - 1].z,temp_vertices[vIndex[2] - 1].x,temp_vertices[vIndex[2] - 1].y });
-            tri.texture_uv.push_back({ temp_uvs[uvIndex[0] - 1].x,1-temp_uvs[uvIndex[0] - 1].y });
-            tri.texture_uv.push_back({ temp_uvs[uvIndex[1] - 1].x,1-temp_uvs[uvIndex[1] - 1].y });
-            tri.texture_uv.push_back({ temp_uvs[uvIndex[2] - 1].x,1-temp_uvs[uvIndex[2] - 1].y });
+            tri.texture_uv.push_back({ temp_uvs[uvIndex[0] - 1].x,1 - temp_uvs[uvIndex[0] - 1].y });
+            tri.texture_uv.push_back({ temp_uvs[uvIndex[1] - 1].x,1 - temp_uvs[uvIndex[1] - 1].y });
+            tri.texture_uv.push_back({ temp_uvs[uvIndex[2] - 1].x,1 - temp_uvs[uvIndex[2] - 1].y });
             tri.normal.push_back({ temp_normals[nIndex[0] - 1].z,temp_normals[nIndex[0] - 1].x,temp_normals[nIndex[0] - 1].y });
             tri.normal.push_back({ temp_normals[nIndex[1] - 1].z,temp_normals[nIndex[1] - 1].x,temp_normals[nIndex[1] - 1].y });
             tri.normal.push_back({ temp_normals[nIndex[2] - 1].z,temp_normals[nIndex[2] - 1].x,temp_normals[nIndex[2] - 1].y });
@@ -279,12 +322,12 @@ void character_structure::loadOBJ(const char* path)
     }
     if (nbtri) {
         mario.push_back(tri); // conversion mesh -> mesh_drawable
-        mario[mario.size() - 1].uniform.shading = { mario_mtl[current_mtl_index].Ka.x, 0, mario_mtl[current_mtl_index].Ns };
+        mario[mario.size() - 1].uniform.shading = { 0.5f, 1, mario_mtl[current_mtl_index].Ns };
         texture_indices.push_back(current_mtl_index);
         std::string name = std::string(current_name);
         part_name.push_back(name);
     }
-    std::cout << "\tOBJ loaded\t[OK]" << std::endl;
+    std::cout << "\t\t[OK] Mario OBJ loaded" << std::endl;
 }
 
 #endif
