@@ -1,6 +1,7 @@
 #pragma once
 
 #include "main/scene_base/base.hpp"
+#include "scenes/3D_graphics/main_scene/parts/map.hpp"
 
 #ifdef MAIN_SCENE
 
@@ -12,6 +13,8 @@ struct bubble_structure
     bool unsquishing;
     int squish_counter;
     float squish; // si squishing, squish peut aller de 0 à 1, et si unsquishing, de 1 à 0
+
+    bubble_structure() {}
 
     bubble_structure(vcl::vec3 p, vcl::vec3 v) {
         this->p = p; this->v = v;
@@ -28,14 +31,16 @@ struct bubble_structure
 
 struct bubbles_structure
 {
-    void setup();
+    void setup(map_structure* map_);
     void draw_bubbles(std::map<std::string,GLuint>& shaders, scene_structure& scene, bool surf, bool wf);
     void simulate();
 
+    bool active;
     float radius;
-    std::list<bubble_structure> positions; // Storage of all currently active particles
+    bubble_structure bubble; // Storage of a particle
     vcl::mesh_drawable sphere; // Visual representation of a bubble - a sphere
     GLuint texture_bubble;
+    map_structure* map; // Pointer to the map, for collisions
 
     vcl::timer_event timerevent;    // Timer allowing to indicate periodic events
 };

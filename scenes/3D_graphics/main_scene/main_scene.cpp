@@ -18,16 +18,16 @@ void scene_model::setup_data(std::map<std::string,GLuint>& shaders, scene_struct
 
     character.init({0,0,0});
 
-    map.loadMTL("scenes/shared_assets/models/Bob-omb/Bob-omb Battlefield.mtl");
-    map.loadOBJ("scenes/shared_assets/models/Bob-omb/Bob-omb Battlefield.obj");
-    map.create_sky(); // Skybox  
-    map.other_objects();
+    map.init(
+        "scenes/shared_assets/models/Bob-omb/Bob-omb Battlefield.mtl",
+        "scenes/shared_assets/models/Bob-omb/Bob-omb Battlefield.obj"
+    );
 
     star.create_star();
 
     bridge.setup(vec3{ -1.736f, 3.139f, 0.728f }, vec3{ -1.28f,-1.28f,0 }, vec3{ 0.256f,-0.256f,0 }, vec3{ 0,0,0.054f });
 
-    bubbles.setup();
+    bubbles.setup(&map);
 
     flight.setup_flight(shaders, scene, &character);
 
