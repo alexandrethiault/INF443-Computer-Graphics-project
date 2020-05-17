@@ -9,8 +9,7 @@ struct character_structure
 {
     // pr�rempli avec ce que j'ai pris pour le chomp
     float scale;
-    float angle, angular_v, max_angular_velocity, speed, max_speed;
-    vcl::vec3 center, rel_position;
+    vcl::vec3 center;
     vcl::hierarchy_mesh_drawable hierarchy;
 
     void init(const vcl::vec3& center);

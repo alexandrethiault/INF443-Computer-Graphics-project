@@ -29,6 +29,7 @@ struct map_structure
     std::vector<triangle> map_triangle;
     vcl::buffer2D< std::vector<triangle*> > grid;
     bool collision(vcl::vec3 position, vcl::vec3& impact, vcl::vec3& normal, float min_normal_z = -0.2f);
+    float get_z(vcl::vec3 position);
 
     std::vector<vcl::mesh_drawable> map;
     std::vector<mtltexture> map_mtl;

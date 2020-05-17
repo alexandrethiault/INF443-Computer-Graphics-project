@@ -31,6 +31,15 @@ void scene_model::setup_data(std::map<std::string,GLuint>& shaders, scene_struct
 
     flight.setup_flight(shaders, scene, &character);
 
+    std::fstream bobombs_pos("scenes/shared_assets/coords/bobomb.txt");
+    int n; bobombs_pos >> n;
+    bobombs.resize(n);
+    vec3 ipos;
+    for (int i = 0; i < n; i++) {
+        bobombs_pos >> ipos.x >> ipos.y >> ipos.z;
+        bobombs[i].init(ipos);
+    }
+
     timer.scale = 1.0f;
     timer.t_max = 20.0f;
 }
@@ -49,6 +58,8 @@ void scene_model::frame_draw(std::map<std::string, GLuint>& shaders, scene_struc
     bridge.move(t);
     bubbles.simulate();
     flight.simulate(); // Moves the character to the current flight position
+    for(std::vector<bobomb_structure>::iterator i = bobombs.begin(); i != bobombs.end(); i++)
+        i->move(flight.p, t, ((t < last_t) ? timer.t_max - timer.t_min : 0) + t - last_t, map.get_z(i->get_position()));
 
     glEnable(GL_POLYGON_OFFSET_FILL); // avoids z-fighting when displaying wireframe
     chomp.draw_nobillboards(shaders, scene, gui_scene.surface, gui_scene.wireframe);
@@ -58,6 +69,8 @@ void scene_model::frame_draw(std::map<std::string, GLuint>& shaders, scene_struc
     bridge.draw_bridge(shaders, scene, gui_scene.surface, gui_scene.wireframe);
     if (gui_scene.bubbles) bubbles.draw_bubbles(shaders, scene, gui_scene.surface, gui_scene.wireframe);
     if (gui_scene.mario) character.draw(shaders, scene, gui_scene.surface, gui_scene.wireframe);
+    for (std::vector<bobomb_structure>::iterator i = bobombs.begin(); i != bobombs.end(); i++)
+        i->draw_nobillboards(shaders, scene, gui_scene.surface, gui_scene.wireframe);
 
     //// BILLBOARDS ALWAYS LAST ////
 
@@ -68,6 +81,8 @@ void scene_model::frame_draw(std::map<std::string, GLuint>& shaders, scene_struc
     star.draw_billboards(shaders, scene, gui_scene.surface, gui_scene.wireframe); // Star eyes
     chomp.draw_billboards(shaders, scene, gui_scene.billboards, gui_scene.wireframe); // Eyes and chains
     map.draw_billboards(shaders, scene, gui_scene.billboards, gui_scene.wireframe); // 2 types of grids and 17 trees
+    for (std::vector<bobomb_structure>::iterator i = bobombs.begin(); i != bobombs.end(); i++)
+        i->draw_billboards(shaders, scene, gui_scene.billboards, gui_scene.wireframe);
     glDepthMask(true);
     glBindTexture(GL_TEXTURE_2D, scene.texture_white);
 

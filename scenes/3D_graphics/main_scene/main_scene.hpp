@@ -7,6 +7,7 @@
 #include "scenes/3D_graphics/main_scene/parts/bridge.hpp"
 #include "scenes/3D_graphics/main_scene/parts/bubble.hpp"
 #include "scenes/3D_graphics/main_scene/parts/character.hpp"
+#include "scenes/3D_graphics/main_scene/parts/bobomb.hpp"
 #include "scenes/3D_graphics/main_scene/parts/interpolation_position.hpp"
 
 #ifdef MAIN_SCENE
@@ -38,6 +39,7 @@ struct scene_model : scene_base
     bridge_structure bridge;
     bubbles_structure bubbles;
     flight_model flight;
+    std::vector<bobomb_structure> bobombs;
 
     gui_scene_structure gui_scene;
     vcl::timer_interval timer;

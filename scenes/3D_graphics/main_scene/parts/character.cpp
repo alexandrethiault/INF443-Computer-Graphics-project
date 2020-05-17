@@ -13,12 +13,7 @@ const float PI = 3.14159f;
 
 void character_structure::init(const vec3& center)
 {
-    if (false) {
-        std::cout << "Tentative de re-initialiser un mario deja initialise." << std::endl;
-        return;
-    }
-
-    scale = 0.1f;
+    scale = 0.07f;
 
     int n;
     vec3 pos;
@@ -88,7 +83,7 @@ void character_structure::draw(std::map<std::string, GLuint>& shaders, scene_str
         else {
             glBindTexture(GL_TEXTURE_2D, mario_textures[texture_indices[i]]);
         }
-        hierarchy[part_name[i]].global_transform.scaling = .001f;
+        hierarchy[part_name[i]].global_transform.scaling = scale*0.01f;
         if (surf) draw_hierarchy_element(hierarchy[part_name[i]], scene.camera, shaders["mesh"]);
         if (wf) draw_hierarchy_element(hierarchy[part_name[i]], scene.camera, shaders["wireframe"]);
     }
@@ -138,7 +133,6 @@ void character_structure::set_translation(vcl::vec3& p)
     hierarchy["Corps"].transform.translation = p;
     hierarchy.update_local_to_global_coordinates();
 }
-
 
 void character_structure::set_rotation(vcl::mat3& R)
 {
