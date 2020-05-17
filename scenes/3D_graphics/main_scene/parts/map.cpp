@@ -12,6 +12,7 @@ using namespace vcl;
 const std::string map_dir = "scenes/shared_assets/models/Bob-omb";
 
 float triangle::collision_depth = 0.3f;
+shading_mesh shading = { 0.7f,0.3f,0 };
 
 triangle::triangle(vec3& p1, vec3& p2, vec3& p3, vec3& fakenormal)
 {
@@ -56,12 +57,13 @@ void map_structure::create_sky()
 
 void map_structure::other_objects()
 {
-    mesh _post = mesh_primitive_cylinder(0.05f, { 0,0,0 }, { 0,0,0.23f }, 17);
+    // Posts, for chain chomp and also other random positions
+    mesh _post = mesh_primitive_cylinder(0.05f, { 0,0,0 }, { 0,0,0.23f }, 9);
     for (int i = 0; i < (int)_post.texture_uv.size(); i++)  _post.texture_uv[i].x *= 4;
     post = _post;
     post.uniform.shading = { 1,0,0 };
     texture_post = create_texture_gpu(image_load_png("scenes/shared_assets/textures/dark_wood.png"));
-    post_top = mesh_primitive_disc(0.05f, { 0,0,0.23f }, { 0,0,1 }, 17);
+    post_top = mesh_primitive_disc(0.05f, { 0,0,0.23f }, { 0,0,1 }, 9);
     post_top.uniform.shading = { 1,0,0 };
     texture_post_top = create_texture_gpu(image_load_png("scenes/shared_assets/textures/cut_wood.png"));
     std::fstream posts("scenes/shared_assets/coords/posts.txt");
@@ -70,6 +72,7 @@ void map_structure::other_objects()
     for (int i = 0; i < n; i++)
         posts >> post_positions[i].x >> post_positions[i].y >> post_positions[i].z;
 
+    // Trees, billboards that turn to the camera
     mesh _billboard = mesh_primitive_quad({ -0.2f, 0.55f,0 }, { 0.2f, 0.55f,0 }, { 0.2f,0,0 }, { -0.2f,0,0 });
     billboard = _billboard;
     billboard.uniform.shading = { 1,0,0 };
@@ -79,6 +82,50 @@ void map_structure::other_objects()
     tree_positions.resize(n);
     for (int i = 0; i < n; i++)
         trees >> tree_positions[i].x >> tree_positions[i].y >> tree_positions[i].z;
+
+    // Coins, grey sprites for both red and yellow coins
+    mesh _coin = mesh_primitive_quad({ -0.05f, 0.05f,0 }, { 0.05f, 0.05f,0 }, { 0.05f,-0.05f,0 }, { -0.05f,-0.05f ,0 });
+    coin = _coin;
+    coin.uniform.shading = { 1,0,0 };
+    coin.uniform.transform.scaling = 0.8f;
+    texture_coin[0] = create_texture_gpu(image_load_png("scenes/shared_assets/textures/bb_coin0.png"));
+    texture_coin[1] = create_texture_gpu(image_load_png("scenes/shared_assets/textures/bb_coin1.png"));
+    texture_coin[2] = create_texture_gpu(image_load_png("scenes/shared_assets/textures/bb_coin2.png"));
+    texture_coin[3] = create_texture_gpu(image_load_png("scenes/shared_assets/textures/bb_coin3.png"));
+    std::fstream ycoins("scenes/shared_assets/coords/yellow_coins.txt");
+    ycoins >> n;
+    yellow_coin_positions.resize(n);
+    for (int i = 0; i < n; i++)
+        ycoins >> yellow_coin_positions[i].x >> yellow_coin_positions[i].y >> yellow_coin_positions[i].z;
+    std::fstream rcoins("scenes/shared_assets/coords/red_coins.txt");
+    rcoins >> n;
+    red_coin_positions.resize(n);
+    for (int i = 0; i < n; i++)
+        rcoins >> red_coin_positions[i].x >> red_coin_positions[i].y >> red_coin_positions[i].z;
+
+    // Red blocks that pop the feathered hat in the game, two textures for 4 sides and for up/down
+    mesh _block = mesh_primitive_quad({ -0.1f,-0.1f,-0.1f }, { -0.1f,0.1f,-0.1f }, { -0.1f,0.1f,0.1f }, { -0.1f,-0.1f,0.1f });
+    _block.push_back(mesh_primitive_quad({ -0.1f,0.1f,-0.1f }, { 0.1f,0.1f,-0.1f }, { 0.1f,0.1f,0.1f }, { -0.1f,0.1f,0.1f }));
+    _block.push_back(mesh_primitive_quad({ 0.1f,0.1f,-0.1f }, { 0.1f,-0.1f,-0.1f }, { 0.1f,-0.1f,0.1f }, { 0.1f,0.1f,0.1f }));
+    _block.push_back(mesh_primitive_quad({ 0.1f,-0.1f,-0.1f }, { -0.1f,-0.1f,-0.1f }, { -0.1f,-0.1f,0.1f }, { 0.1f,-0.1f,0.1f }));
+    mesh _block_v = mesh_primitive_quad({ -0.1f,-0.1f,-0.1f }, { -0.1f,0.1f,-0.1f }, { 0.1f,0.1f,-0.1f }, { 0.1f,-0.1f,-0.1f });
+    _block_v.push_back(mesh_primitive_quad({ -0.1f,-0.1f,0.1f }, { 0.1f,-0.1f,0.1f }, { 0.1f,0.1f,0.1f }, { -0.1f,0.1f,0.1f }));
+    block = _block;
+    block_v = _block_v;
+    block.uniform.shading = shading;
+    block_v.uniform.shading = shading;
+    texture_red_block = create_texture_gpu(image_load_png("scenes/shared_assets/textures/red_block.png"));
+    texture_red_block_v = create_texture_gpu(image_load_png("scenes/shared_assets/textures/red_block_v.png"));
+    std::fstream blocks("scenes/shared_assets/coords/blocks.txt");
+    blocks >> n;
+    red_block_positions.resize(n);
+    for (int i = 0; i < n; i++)
+        blocks >> red_block_positions[i].x >> red_block_positions[i].y >> red_block_positions[i].z;
+
+
+    //mesh _lift;
+    //mesh _lift_side;
+
 }
 
 bool map_structure::collision(vcl::vec3 position, vcl::vec3& impact, vcl::vec3& normal, float min_normal_z)
@@ -181,7 +228,7 @@ void map_structure::loadOBJ(const char* path)
         else if (strcmp(lineHeader, "usemtl") == 0) {
             if (nbtri) {
                 map.push_back(tri); // conversion mesh -> mesh_drawable
-                map[map.size() - 1].uniform.shading = { 0.7f, 0.3f, 0 };
+                map[map.size() - 1].uniform.shading = shading;
                 texture_indices.push_back(current_mtl_index);
             }
             fscanf(file, "%s\n", current_mtl);
@@ -221,7 +268,7 @@ void map_structure::loadOBJ(const char* path)
     }
     if (nbtri) {
         map.push_back(tri); // conversion mesh -> mesh_drawable
-        map[map.size() - 1].uniform.shading = { 0.7f, 0.3f, 0 };
+        map[map.size() - 1].uniform.shading = shading;
         texture_indices.push_back(current_mtl_index);
     }
 
@@ -279,6 +326,18 @@ void map_structure::draw_nobillboards(std::map<std::string, GLuint>& shaders, sc
         if (wf) draw(post_top, scene.camera, shaders["wireframe"]);
     }
 
+    for (vec3 block_position : red_block_positions) {
+        glBindTexture(GL_TEXTURE_2D, texture_red_block);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        block.uniform.transform.translation = block_position;
+        if (surf) draw(block, scene.camera, shaders["mesh"]);
+        if (wf) draw(block, scene.camera, shaders["wireframe"]);
+        glBindTexture(GL_TEXTURE_2D, texture_red_block_v);
+        block_v.uniform.transform.translation = block_position;
+        if (surf) draw(block_v, scene.camera, shaders["mesh"]);
+        if (wf) draw(block_v, scene.camera, shaders["wireframe"]);
+    }
+
     // Bob omb battlefield map
     for (int i = 2; i < (int)map.size(); i++) { // 0 and 1 are billboards
         glBindTexture(GL_TEXTURE_2D, map_textures[texture_indices[i]]);
@@ -289,9 +348,12 @@ void map_structure::draw_nobillboards(std::map<std::string, GLuint>& shaders, sc
     }
 }
 
-bool cmpbillboard(vec3& u, vec3& v, vec3& cam_pos) { return (norm(u - cam_pos) > norm(v - cam_pos)); }
+bool cmpbillboard(std::pair<vec3, std::pair<GLuint, bool> >& u, std::pair<vec3, std::pair<GLuint, bool> >& v, vec3& cam_pos)
+{
+    return (norm(u.first - cam_pos) > norm(v.first - cam_pos));
+}
 
-void map_structure::draw_billboards(std::map<std::string, GLuint>& shaders, scene_structure& scene, bool bb, bool wf)
+void map_structure::draw_billboards(std::map<std::string, GLuint>& shaders, scene_structure& scene, bool bb, bool wf, int coin_rotation)
 {
     for (int i = 0; i < 2; i++) {
         glBindTexture(GL_TEXTURE_2D, map_textures[texture_indices[i]]);
@@ -301,15 +363,38 @@ void map_structure::draw_billboards(std::map<std::string, GLuint>& shaders, scen
         if (wf) draw(map[i], scene.camera, shaders["wireframe"]);
     }
 
-    std::sort(tree_positions.begin(), tree_positions.end(),
+    std::vector<std::pair<vec3, std::pair<GLuint, bool> > > bb_positions;
+    int i = coin_rotation;
+    assert(0 <= i && i < 4);
+    for (vec3 tree_position : tree_positions)
+        bb_positions.push_back(std::make_pair(tree_position, std::make_pair(texture_tree, true)));
+    for (vec3 red_coin_position : red_coin_positions)
+        bb_positions.push_back(std::make_pair(red_coin_position, std::make_pair(texture_coin[i], true)));
+    for (vec3 yellow_coin_position : yellow_coin_positions)
+        bb_positions.push_back(std::make_pair(yellow_coin_position, std::make_pair(texture_coin[i], false)));
+    std::sort(bb_positions.begin(), bb_positions.end(),
         [&scene](auto u, auto v) -> bool {return cmpbillboard(u, v, scene.camera.camera_position()); });
-    for (vec3 tree_position : tree_positions) {
-        vec3 dpos = scene.camera.camera_position() - tree_position;
-        billboard.uniform.transform.rotation =rotation_from_axis_angle_mat3({ 0,0,1 }, atan2(dpos.y, dpos.x)) * mat3{0, 0, 1, 1, 0, 0, 0, 1, 0};
-        billboard.uniform.transform.translation = tree_position;
-        glBindTexture(GL_TEXTURE_2D, texture_tree);
-        if (bb) draw(billboard, scene.camera, shaders["mesh"]);
-        if (wf) draw(billboard, scene.camera, shaders["wireframe"]);
+    for (auto bb_position : bb_positions) {
+        vec3 dpos = scene.camera.camera_position() - bb_position.first;
+        if (bb_position.second.first == texture_coin[i]) {
+            if (bb_position.second.second) coin.uniform.color = { 1,0,0 };
+            else coin.uniform.color = { 1,1,0 };
+            coin.uniform.transform.rotation = rotation_from_axis_angle_mat3({ 0,0,1 }, atan2(dpos.y, dpos.x)) * mat3 { 0, 0, 1, 1, 0, 0, 0, 1, 0 };
+            coin.uniform.transform.translation = bb_position.first;
+            glBindTexture(GL_TEXTURE_2D, bb_position.second.first);
+
+            if (bb && (bb_position.second.second || norm(scene.frame_camera.uniform.transform.translation - bb_position.first) < 2))
+                draw(coin, scene.camera, shaders["mesh"]); // don't draw yellow coins that are too far away from camera frame center
+            if (wf) draw(coin, scene.camera, shaders["wireframe"]);
+        }
+        else {
+            billboard.uniform.transform.rotation = rotation_from_axis_angle_mat3({ 0,0,1 }, atan2(dpos.y, dpos.x)) * mat3 { 0, 0, 1, 1, 0, 0, 0, 1, 0 };
+            billboard.uniform.transform.translation = bb_position.first;
+            glBindTexture(GL_TEXTURE_2D, bb_position.second.first);
+
+            if (bb) draw(billboard, scene.camera, shaders["mesh"]);
+            if (wf) draw(billboard, scene.camera, shaders["wireframe"]);
+        }
     }
 }
 
