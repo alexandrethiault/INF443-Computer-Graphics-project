@@ -11,7 +11,7 @@ struct triangle
     float d; // p1,p2,p3 lie on a plane ax+by+cz = d with (a,b,c) = n
     vcl::vec3 p1, p2, p3, n;
     triangle(vcl::vec3& p1, vcl::vec3& p2, vcl::vec3& p3, vcl::vec3& fakenormal);
-    bool collision(vcl::vec3 position, vcl::vec3& impact, vcl::vec3& normal);
+    bool collision(vcl::vec3 position, vcl::vec3& impact, vcl::vec3& normal, float margin=0.0f);
 };
 
 struct map_structure
@@ -31,6 +31,7 @@ struct map_structure
     std::vector<triangle> map_triangle;
     vcl::buffer2D< std::vector<triangle*> > grid;
     bool collision(vcl::vec3 position, vcl::vec3& impact, vcl::vec3& normal, float min_normal_z = -0.2f);
+    bool collision_sphere(vcl::vec3 position, float radius_hitbox, vcl::vec3& impact, vcl::vec3& normal, float min_normal_z = -0.2f);
     float get_z(vcl::vec3 position);
 
     std::vector<vcl::mesh_drawable> map;

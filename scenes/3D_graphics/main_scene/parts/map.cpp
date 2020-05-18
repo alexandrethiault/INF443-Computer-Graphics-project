@@ -27,10 +27,10 @@ triangle::triangle(vec3& p1, vec3& p2, vec3& p3, vec3& fakenormal)
     this->d = dot(p1, n); // d = ax+by+cz
 }
 
-bool triangle::collision(vec3 position, vec3& impact, vec3& normal)
+bool triangle::collision(vec3 position, vec3& impact, vec3& normal, float margin)
 {
     float distance_to_plane = dot(position, n) - d;
-    if (distance_to_plane < -collision_depth || distance_to_plane > 0) return false;
+    if (distance_to_plane < -collision_depth-margin || distance_to_plane > margin) return false;
     impact = position - distance_to_plane * n;
     normal = n;
     return (dot(cross(p2 - p1, impact - p1), n) > 0 && dot(cross(p3 - p2, impact - p2), n) > 0 && dot(cross(p1 - p3, impact - p3), n) > 0);
@@ -140,36 +140,16 @@ bool map_structure::collision(vcl::vec3 position, vcl::vec3& impact, vcl::vec3& 
     return false; // impact may have been modified anyway in the process
 }
 
-float side(vec3& p1, vec3& p2, vec3& p3) {
-    return (p1.x - p3.x) * (p2.y - p3.y) - (p2.x - p3.x) * (p1.y - p3.y);
-}
-
-float map_structure::get_z(vcl::vec3 position) {
+bool map_structure::collision_sphere(vcl::vec3 position, float radius_hitbox, vcl::vec3& impact, vcl::vec3& normal, float min_normal_z)
+{
     int i = static_cast<int>((position.x - minx) / (maxx - minx) * grid_size);
     int j = static_cast<int>((position.y - miny) / (maxy - miny) * grid_size);
     if (i >= grid_size || i < 0 || j >= grid_size || j < 0)
-        return 0.f;
-
-    float d1, d2, d3;
-    bool has_neg, has_pos;
-    float nearest = -1000.f, z;
-
+        return false;
     for (triangle* triptr : grid(i, j))
-        if (triptr->n.z > 0.1f) {
-            d1 = side(position, triptr->p1, triptr->p2);
-            d2 = side(position, triptr->p2, triptr->p3);
-            d3 = side(position, triptr->p3, triptr->p1);
-
-            has_neg = (d1 < 0) || (d2 < 0) || (d3 < 0);
-            has_pos = (d1 > 0) || (d2 > 0) || (d3 > 0);
-
-            z = triptr->p1.z - (triptr->n.x * (position.x - triptr->p1.x) + triptr->n.y * (position.y - triptr->p1.y)) / triptr->n.z;
-
-            if (!(has_neg && has_pos) && abs(nearest - position.z) > abs(z - position.z))
-                nearest = z;
-        }
-
-    return nearest;
+        if (triptr->n.z > min_normal_z && triptr->collision(position, impact, normal))
+            return true;
+    return false; // impact may have been modified anyway in the process
 }
 
 void map_structure::loadMTL(const char* path)
