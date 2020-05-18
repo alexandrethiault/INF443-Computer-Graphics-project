@@ -21,6 +21,8 @@ struct gui_scene_structure
     bool mario = true;
     bool display_keyframe = false;
     bool display_polygon = false;
+    bool lock_on_mario = false;
+    bool auto_orientation = false;
 };
 
 struct scene_model : scene_base
@@ -30,7 +32,7 @@ struct scene_model : scene_base
     void mouse_click(scene_structure& scene, GLFWwindow* window, int button, int action, int mods);
     void mouse_move(scene_structure& scene, GLFWwindow* window);
     void keyboard_input(scene_structure& scene, GLFWwindow* window, int key, int scancode, int action, int mods);
-    void set_gui();
+    void set_gui(std::map<std::string, GLuint>& shaders, scene_structure& scene);
     
     chomp_structure chomp;
     character_structure character;

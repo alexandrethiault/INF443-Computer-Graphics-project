@@ -18,9 +18,11 @@ struct map_structure
 {
     void init(const char* MTLpath, const char* OBJpath);
 
-    vcl::mesh_drawable sky, post, post_top, billboard, shadow;
-    GLuint texture_sky, texture_post, texture_post_top, texture_tree;
-    std::vector<vcl::vec3> post_positions, tree_positions;
+    vcl::mesh_drawable sky, post, post_top, billboard, coin, block, block_v, lift, lift_side;
+    GLuint texture_sky, texture_post, texture_post_top, texture_tree, texture_red_block, texture_red_block_v, texture_lift, texture_lift_side;
+    GLuint texture_coin[4];
+    std::vector<vcl::vec3> post_positions, tree_positions, red_block_positions, yellow_coin_positions, red_coin_positions;
+
     void create_sky();
     void other_objects();
 
@@ -38,7 +40,7 @@ struct map_structure
     void loadMTL(const char* path);
     void loadOBJ(const char* path);
     void draw_nobillboards(std::map<std::string, GLuint>& shaders, scene_structure& scene, bool surf, bool wf);
-    void draw_billboards(std::map<std::string, GLuint>& shaders, scene_structure& scene, bool bb, bool wf);
+    void draw_billboards(std::map<std::string, GLuint>& shaders, scene_structure& scene, bool bb, bool wf, int coin_rotation);
 };
 
 

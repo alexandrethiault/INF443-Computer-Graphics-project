@@ -146,12 +146,15 @@ mesh mesh_eyes(float radius, float angle, float height) {
     return shape;
 }
 
-void bobomb_structure::init(const vec3& _center)
+void bobomb_structure::init(const vec3& _center, map_structure* _map)
 {
     if (radius_boulon) {
         std::cout << "Tentative de re-initialiser un chomp deja initialise." << std::endl;
         return;
     }
+
+    map = _map;
+
     scaling = 0.3f;
     radius_boulon = scaling * 0.075f;
     height_boulon = scaling * 0.06f;
@@ -250,7 +253,7 @@ void bobomb_structure::draw_billboards(std::map<std::string, GLuint>& shaders, s
     if (wf) draw_hierarchy_element(hierarchy["Yeux"], scene.camera, shaders["wireframe"]);
 }
 
-void bobomb_structure::move(const vcl::vec3& char_pos, float t, float dt, float z)
+void bobomb_structure::move(const vcl::vec3& char_pos, float t, float dt)
 {
     if (disappear) return;
     if (dt > 0.1f) dt = 0.1f;
@@ -310,14 +313,20 @@ void bobomb_structure::move(const vcl::vec3& char_pos, float t, float dt, float 
         rel_position += dt * vec3{ hspeed * cos(angle), hspeed * sin(angle), 0 };
     }
 
-    if ((center + rel_position).z - z >= -0.1f) {
-        if (falling && (center + rel_position).z - z <= 0.01f) {
+    float z_floor = map->get_z(center + rel_position);
+    vec3 impact, normal;
+
+    if (map->collision(center + rel_position + centre_corps, impact, normal) && dot(center + rel_position + centre_corps - impact, normal) < 0.f)
+        rel_position -= dot(center + rel_position + centre_corps - impact, normal) * normal;
+
+    if ((center + rel_position).z - z_floor >= -0.1f) {
+        if (falling && (center + rel_position).z - z_floor <= 0.01f) {
             falling = false;
             vspeed = 0.f;
         }
 
-        if (!falling && (center + rel_position).z - z <= .1f)
-            rel_position.z = z - center.z;
+        if (!falling && (center + rel_position).z - z_floor <= .1f)
+            rel_position.z = z_floor - center.z;
         else {
             vspeed += -2.5f * dt;
             rel_position.z += vspeed * dt;

@@ -37,7 +37,7 @@ void scene_model::setup_data(std::map<std::string,GLuint>& shaders, scene_struct
     vec3 ipos;
     for (int i = 0; i < n; i++) {
         bobombs_pos >> ipos.x >> ipos.y >> ipos.z;
-        bobombs[i].init(ipos);
+        bobombs[i].init(ipos, &map);
     }
 
     timer.scale = 1.0f;
@@ -46,7 +46,7 @@ void scene_model::setup_data(std::map<std::string,GLuint>& shaders, scene_struct
 
 void scene_model::frame_draw(std::map<std::string, GLuint>& shaders, scene_structure& scene, gui_structure&)
 {
-    set_gui();
+    set_gui(shaders, scene);
 
     timer.update();
     const float t = timer.t;
@@ -59,7 +59,13 @@ void scene_model::frame_draw(std::map<std::string, GLuint>& shaders, scene_struc
     bubbles.simulate();
     flight.simulate(); // Moves the character to the current flight position
     for(std::vector<bobomb_structure>::iterator i = bobombs.begin(); i != bobombs.end(); i++)
-        i->move(flight.p, t, ((t < last_t) ? timer.t_max - timer.t_min : 0) + t - last_t, map.get_z(i->get_position()));
+        i->move(flight.p, t, ((t < last_t) ? timer.t_max - timer.t_min : 0) + t - last_t);
+
+    if (gui_scene.lock_on_mario) scene.camera.translation = -flight.p; // camera frame center = Mario
+    if (gui_scene.auto_orientation) {
+        scene.camera.scale = 1;
+        scene.camera.orientation = rotation_to_vector_mat3({ -flight.dp.z,-flight.dp.x,flight.dp.y });
+    }
 
     glEnable(GL_POLYGON_OFFSET_FILL); // avoids z-fighting when displaying wireframe
     chomp.draw_nobillboards(shaders, scene, gui_scene.surface, gui_scene.wireframe);
@@ -80,7 +86,7 @@ void scene_model::frame_draw(std::map<std::string, GLuint>& shaders, scene_struc
     // étoiles puis grille du chomp puis chomp (chaine) puis reste de la map (arbres, pièces)
     star.draw_billboards(shaders, scene, gui_scene.surface, gui_scene.wireframe); // Star eyes
     chomp.draw_billboards(shaders, scene, gui_scene.billboards, gui_scene.wireframe); // Eyes and chains
-    map.draw_billboards(shaders, scene, gui_scene.billboards, gui_scene.wireframe); // 2 types of grids and 17 trees
+    map.draw_billboards(shaders, scene, gui_scene.billboards, gui_scene.wireframe, ((int)(16 * t)) % 4); // 2 types of grids and 17 trees
     for (std::vector<bobomb_structure>::iterator i = bobombs.begin(); i != bobombs.end(); i++)
         i->draw_billboards(shaders, scene, gui_scene.billboards, gui_scene.wireframe);
     glDepthMask(true);
@@ -108,7 +114,7 @@ void scene_model::keyboard_input(scene_structure& scene, GLFWwindow* window, int
         std::cout << scene.frame_camera.uniform.transform.translation << std::endl;
 }
 
-void scene_model::set_gui()
+void scene_model::set_gui(std::map<std::string, GLuint>& shaders, scene_structure& scene)
 {
     ImGui::Text("Display: "); ImGui::SameLine();
     ImGui::Checkbox("Wireframe", &gui_scene.wireframe); ImGui::SameLine();
@@ -120,6 +126,8 @@ void scene_model::set_gui()
     ImGui::SliderFloat("Time scale", &timer.scale, 0.01f, 3.0f);
 
     ImGui::Checkbox("Mario", &gui_scene.mario); ImGui::SameLine();
+    ImGui::Checkbox("Lock camera on Mario", &gui_scene.lock_on_mario); ImGui::SameLine();
+    ImGui::Checkbox("Third person camera", &gui_scene.auto_orientation);
     ImGui::Checkbox("Keyframes", &gui_scene.display_keyframe); ImGui::SameLine();
     ImGui::Checkbox("Polygon", &gui_scene.display_polygon); ImGui::SameLine();
     ImGui::Checkbox("Bubbles", &gui_scene.bubbles);
