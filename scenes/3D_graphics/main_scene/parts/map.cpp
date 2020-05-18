@@ -11,7 +11,7 @@ using namespace vcl;
 
 const std::string map_dir = "scenes/shared_assets/models/Bob-omb";
 
-float triangle::collision_depth = 0.3f;
+float triangle::collision_depth = 0.2f;
 shading_mesh shading = { 0.7f,0.3f,0 };
 
 triangle::triangle(vec3& p1, vec3& p2, vec3& p3, vec3& fakenormal)
@@ -30,7 +30,7 @@ triangle::triangle(vec3& p1, vec3& p2, vec3& p3, vec3& fakenormal)
 bool triangle::collision(vec3 position, vec3& impact, vec3& normal, float margin)
 {
     float distance_to_plane = dot(position, n) - d;
-    if (distance_to_plane < -collision_depth-margin || distance_to_plane > margin) return false;
+    if (distance_to_plane < -collision_depth || distance_to_plane > margin) return false;
     impact = position - distance_to_plane * n;
     normal = n;
     return (dot(cross(p2 - p1, impact - p1), n) > 0 && dot(cross(p3 - p2, impact - p2), n) > 0 && dot(cross(p1 - p3, impact - p3), n) > 0);
