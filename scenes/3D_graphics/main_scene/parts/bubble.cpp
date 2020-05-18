@@ -65,8 +65,11 @@ void bubbles_structure::simulate() {
     // Rebound for particle hitting the ground
     vec3 impact, normal;
     if (active) {
-        if (map->collision(bubble.p - vec3{ 0, 0, radius }, impact, normal, 0.1f) ||
-            map->collision(bubble.p, impact, normal)) { // 2nd test to avoid phasing through corners
+        if (map->wall_collision(bubble.p, impact, normal, radius)) {
+            bubble.p = impact + normal * radius;
+            bubble.v -= 2 * dot(bubble.v, normal) * normal;
+        }
+        if (bubble.v.z < 0.f && map->ground_collision(bubble.p - vec3{ 0,0,radius }, impact, normal)) {
             if (!bubble.squishing && !bubble.unsquishing) {
                 bubble.p = impact + vec3{ 0,0,radius-0.01f };
                 bubble.squish_counter++;

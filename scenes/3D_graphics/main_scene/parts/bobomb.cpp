@@ -162,7 +162,7 @@ void bobomb_structure::init(const vec3& _center, map_structure* _map)
     cote_corps = scaling * 0.3f;
     height_pied = scaling * 0.060f;
     height_yeux = scaling * 0.1f;
-    temps_explode = 5.f;
+    temps_explode = 50.f;
 
     radius_reach = scaling * cote_corps * 20.0f;
 
@@ -263,12 +263,12 @@ void bobomb_structure::move(const vcl::vec3& char_pos, float t, float dt)
     if (norm(char_pos - (center + rel_position)) < 1.9f) // légère hystérésis pour éviter des scintillement
         hide = false;
 
-    if (!rushing && !exploding && hide) return;
+    if (!rushing && !exploding && hide) return; // Don't hide the bomb if it's about to explode
 
     float w = .0f;
     float ampl = .0f;
 
-    if (rushing) {
+    if (rushing) { // Rush towards Mario
         w = 8 * PI;
         ampl = .4f;
         time_chasing += dt;
@@ -283,7 +283,7 @@ void bobomb_structure::move(const vcl::vec3& char_pos, float t, float dt)
             hspeed = 0.0f;
         }
     }
-    else if (exploding) {
+    else if (exploding) { // The bomb inflates before exploding
         hierarchy["Super_Global"].transform.scaling = 1.f + .5f * time_chasing / .3f;
         time_chasing += dt;
         if (time_chasing > .3f) {
@@ -293,7 +293,7 @@ void bobomb_structure::move(const vcl::vec3& char_pos, float t, float dt)
             rel_position = { 0, 0, 0 };
         }
     }
-    else if (norm(char_pos - (center + rel_position)) < radius_reach) { // Target before attack
+    else if (norm(char_pos - (center + rel_position)) < radius_reach) { // Turn around to face Mario
         w = 2 * PI;
         ampl = .2f;
         time_chasing += dt;
@@ -305,7 +305,7 @@ void bobomb_structure::move(const vcl::vec3& char_pos, float t, float dt)
             time_chasing = 0.0f;
         }
     }
-    else { // Random movement on the plane
+    else { // Random movement on the map
         w = 2 * PI;
         ampl = .2f;
         time_chasing = 0.0f;
@@ -322,13 +322,24 @@ void bobomb_structure::move(const vcl::vec3& char_pos, float t, float dt)
         rel_position += dt * vec3{ hspeed * cos(angle), hspeed * sin(angle), 0 };
     }
 
-    float z_floor = map->get_z(center + rel_position);
+    //float z_floor = map->get_z(center + rel_position);
     vec3 impact, normal;
 
-    if (map->collision_sphere(center + rel_position + centre_corps, cote_corps / 2.f, impact, normal) && dot(center + rel_position + centre_corps - cote_corps/2.f * normal - impact, normal) < 0.f)
-        rel_position -= dot(center + rel_position + centre_corps - cote_corps / 2.f * normal -  impact, normal) * normal;
+    if (map->ground_collision(center + rel_position, impact, normal)) {
+        rel_position = impact - center;
+        vspeed = 0.f;
+    }
+    else {
+        vspeed += -2.5f * dt;
+        rel_position.z += vspeed * dt;
+    }
+    if (map->wall_collision(center + rel_position + centre_corps, impact, normal, cote_corps / 2.f))// && dot(center + rel_position + centre_corps - cote_corps / 2.f * normal - impact, normal) < 0.f)
+        rel_position = impact + normal * cote_corps / 2.f - (center + centre_corps);
+    if (map->wall_collision(center + rel_position + centre_corps, impact, normal, cote_corps / 2.f))// && dot(center + rel_position + centre_corps - cote_corps / 2.f * normal - impact, normal) < 0.f)
+        rel_position = impact + normal * cote_corps / 2.f - (center + centre_corps);
+    
 
-    if ((center + rel_position).z - z_floor >= -0.1f) {
+    /*if ((center + rel_position).z - z_floor >= -0.1f) {
         if (falling && (center + rel_position).z - z_floor <= 0.01f) {
             falling = false;
             vspeed = 0.f;
@@ -342,7 +353,7 @@ void bobomb_structure::move(const vcl::vec3& char_pos, float t, float dt)
             rel_position.z = std::max(rel_position.z, z_floor - center.z);
             falling = true;
         }
-    }
+    }*/
 
     mat3 R_pied_droit = rotation_from_axis_angle_mat3({ 1, 0, 0 }, ampl * std::sin(w * t));
     mat3 R_pied_gauche = rotation_from_axis_angle_mat3({ 1, 0, 0 }, ampl * std::sin(w * t - PI));

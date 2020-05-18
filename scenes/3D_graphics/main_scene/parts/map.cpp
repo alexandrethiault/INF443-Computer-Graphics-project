@@ -11,7 +11,10 @@ using namespace vcl;
 
 const std::string map_dir = "scenes/shared_assets/models/Bob-omb";
 
-float triangle::collision_depth = 0.2f;
+float triangle::ground_collision_depth = 0.3f;
+float triangle::ground_collision_stick = 0.01f;
+float triangle::wall_collision_depth = 0.05f;
+
 shading_mesh shading = { 0.7f,0.3f,0 };
 
 triangle::triangle(vec3& p1, vec3& p2, vec3& p3, vec3& fakenormal)
@@ -27,13 +30,29 @@ triangle::triangle(vec3& p1, vec3& p2, vec3& p3, vec3& fakenormal)
     this->d = dot(p1, n); // d = ax+by+cz
 }
 
+// https://www.youtube.com/watch?v=UnU7DJXiMAQ
 bool triangle::collision(vec3 position, vec3& impact, vec3& normal, float margin)
 {
-    float distance_to_plane = dot(position, n) - d;
-    if (distance_to_plane < -collision_depth || distance_to_plane > margin) return false;
-    impact = position - distance_to_plane * n;
-    normal = n;
-    return (dot(cross(p2 - p1, impact - p1), n) > 0 && dot(cross(p3 - p2, impact - p2), n) > 0 && dot(cross(p1 - p3, impact - p3), n) > 0);
+    if (n.z >= 0.01f) { // Triangle is considered ground, hitboxes are vertical
+        impact.x = position.x;
+        impact.y = position.y;
+        impact.z = (d - impact.x * n.x - impact.y * n.y) / n.z;
+        float distance_to_plane = position.z - impact.z;
+        if (distance_to_plane < -ground_collision_depth || distance_to_plane > ground_collision_stick) return false;
+        normal = n;
+        return (cross(p2 - p1, impact - p1).z > 0 && cross(p3 - p2, impact - p2).z > 0 && cross(p1 - p3, impact - p3).z > 0);
+    }
+    else if (n.z > -0.01f) { // Triangle is considered wall
+        float distance_to_plane = dot(position, n) - d;
+        if (distance_to_plane < -wall_collision_depth || distance_to_plane > margin) return false;
+        impact = position - distance_to_plane * n;
+        normal = n;
+        return (dot(cross(p2 - p1, impact - p1), n) > 0 && dot(cross(p3 - p2, impact - p2), n) > 0 && dot(cross(p1 - p3, impact - p3), n) > 0);
+    }
+    else { // Triangle is considered ceiling
+        return false; // Should do in our conditions
+    }
+    
 }
 
 float side(vec3& p1, vec3& p2, vec3& p3) {
@@ -160,26 +179,26 @@ void map_structure::other_objects()
 
 }
 
-bool map_structure::collision(vcl::vec3 position, vcl::vec3& impact, vcl::vec3& normal, float min_normal_z)
+bool map_structure::ground_collision(vcl::vec3 position, vcl::vec3& impact, vcl::vec3& normal)
 {
     int i = static_cast<int>((position.x - minx) / (maxx - minx) * grid_size);
     int j = static_cast<int>((position.y - miny) / (maxy - miny) * grid_size);
     if (i >= grid_size || i < 0 || j >= grid_size || j < 0)
         return false;
     for (triangle* triptr : grid(i, j))
-        if (triptr->n.z > min_normal_z && triptr->collision(position, impact, normal))
+        if (triptr->n.z > 0.01f && triptr->collision(position, impact, normal))
             return true;
     return false; // impact may have been modified anyway in the process
 }
 
-bool map_structure::collision_sphere(vcl::vec3 position, float radius_hitbox, vcl::vec3& impact, vcl::vec3& normal, float min_normal_z)
+bool map_structure::wall_collision(vcl::vec3 position, vcl::vec3& impact, vcl::vec3& normal, float margin)
 {
     int i = static_cast<int>((position.x - minx) / (maxx - minx) * grid_size);
     int j = static_cast<int>((position.y - miny) / (maxy - miny) * grid_size);
     if (i >= grid_size || i < 0 || j >= grid_size || j < 0)
         return false;
     for (triangle* triptr : grid(i, j))
-        if (triptr->n.z > min_normal_z && triptr->collision(position, impact, normal, radius_hitbox))
+        if (abs(triptr->n.z < 0.01f) && triptr->collision(position, impact, normal, margin))
             return true;
     return false; // impact may have been modified anyway in the process
 }
@@ -316,10 +335,10 @@ void map_structure::loadOBJ(const char* path)
         texture_indices.push_back(current_mtl_index);
     }
 
-    maxx += triangle::collision_depth;
-    maxy += triangle::collision_depth;
-    minx -= triangle::collision_depth;
-    miny -= triangle::collision_depth;
+    maxx += triangle::ground_collision_depth;
+    maxy += triangle::ground_collision_depth;
+    minx -= triangle::ground_collision_depth;
+    miny -= triangle::ground_collision_depth;
     int ind = 0;
     for (triangle& tri : map_triangle) {
         int mini = grid_size, minj = grid_size, maxi = 0, maxj = 0, i, j;
@@ -330,8 +349,8 @@ void map_structure::loadOBJ(const char* path)
             minj = std::min(minj, j);
             maxi = std::max(maxi, i);
             maxj = std::max(maxj, j);
-            i = static_cast<int>((p.x - triangle::collision_depth * tri.n.x - minx) / (maxx - minx) * grid_size);
-            j = static_cast<int>((p.y - triangle::collision_depth * tri.n.y - miny) / (maxy - miny) * grid_size);
+            i = static_cast<int>((p.x - triangle::ground_collision_depth * tri.n.x - minx) / (maxx - minx) * grid_size);
+            j = static_cast<int>((p.y - triangle::ground_collision_depth * tri.n.y - miny) / (maxy - miny) * grid_size);
             if (i == grid_size) i--;
             if (j == grid_size) j--;
             mini = std::min(mini, i);
