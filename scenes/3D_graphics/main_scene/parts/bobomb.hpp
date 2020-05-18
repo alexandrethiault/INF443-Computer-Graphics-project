@@ -8,7 +8,7 @@
 
 struct bobomb_structure
 {
-    bool rushing, exploding, disappear, falling;
+    bool rushing, exploding, disappear, falling, hide;
     float radius_boulon = 0., height_boulon, cote_corps, height_pied, height_yeux, radius_reach, angle, angular_v, max_angular_velocity, hspeed, vspeed, max_speed, time_chasing, scaling;
     vcl::vec3 center, centre_corps, rel_position, rush_speed;
     vcl::hierarchy_mesh_drawable hierarchy;
@@ -21,6 +21,16 @@ struct bobomb_structure
     void draw_billboards(std::map<std::string, GLuint>& shaders, scene_structure& scene, bool bb, bool wf);
     void move(const vcl::vec3& char_pos, float t, float dt);
     vcl::vec3 get_position();
+};
+
+struct bobombs_structure
+{
+    std::vector<bobomb_structure> bobombs;
+
+    void setup(map_structure* _map);
+    void draw_nobillboards(std::map<std::string, GLuint>& shaders, scene_structure& scene, bool surf, bool wf);
+    void draw_billboards(std::map<std::string, GLuint>& shaders, scene_structure& scene, bool bb, bool wf);
+    void move(const vcl::vec3& char_pos, float t, float dt);
 };
 
 #endif

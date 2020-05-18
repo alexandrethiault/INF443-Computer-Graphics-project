@@ -2,6 +2,7 @@
 #include "bobomb.hpp"
 #include <string>
 #include <cmath>
+#include <fstream>
 #include <algorithm>
 
 #ifdef MAIN_SCENE
@@ -170,7 +171,7 @@ void bobomb_structure::init(const vec3& _center, map_structure* _map)
     rel_position = rush_speed = { 0,0,0 };
     angular_v = hspeed = vspeed = time_chasing = 0.0f;
     angle = 0.0f;
-    rushing = exploding = disappear = falling = false;
+    rushing = exploding = disappear = falling = hide = false;
 
     mesh_drawable corps = mesh_primitive_quad({ -cote_corps / 2.f, 0, 0 }, { cote_corps / 2.f, 0, 0 }, { cote_corps / 2.f , 0, cote_corps }, { -cote_corps / 2.f , 0, cote_corps });
     mesh_drawable boulon = mesh_primitive_boulon(radius_boulon, height_boulon, { 0, 0, 0 });
@@ -218,7 +219,7 @@ void bobomb_structure::init(const vec3& _center, map_structure* _map)
 
 void bobomb_structure::draw_nobillboards(std::map<std::string, GLuint>& shaders, scene_structure& scene, bool surf, bool wf)
 {
-    if (disappear) return;
+    if (hide) return;
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); // avoids sampling artifacts
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -235,7 +236,7 @@ void bobomb_structure::draw_nobillboards(std::map<std::string, GLuint>& shaders,
 
 void bobomb_structure::draw_billboards(std::map<std::string, GLuint>& shaders, scene_structure& scene, bool bb, bool wf)
 {
-    if (disappear) return;
+    if (hide) return;
 
     int index;
     mat3 R;
@@ -255,8 +256,14 @@ void bobomb_structure::draw_billboards(std::map<std::string, GLuint>& shaders, s
 
 void bobomb_structure::move(const vcl::vec3& char_pos, float t, float dt)
 {
-    if (disappear) return;
     if (dt > 0.1f) dt = 0.1f;
+
+    if (norm(char_pos - (center + rel_position)) >= 2.f)
+        hide = true;
+    if (norm(char_pos - (center + rel_position)) < 1.9f) // légère hystérésis pour éviter des scintillement
+        hide = false;
+
+    if (hide) return;
 
     float w = .0f;
     float ampl = .0f;
@@ -347,6 +354,36 @@ void bobomb_structure::move(const vcl::vec3& char_pos, float t, float dt)
 
 vcl::vec3 bobomb_structure::get_position() {
     return center + rel_position;
+}
+
+void bobombs_structure::setup(map_structure* _map) {
+
+    std::fstream bobombs_pos("scenes/shared_assets/coords/bobomb.txt");
+    int n; bobombs_pos >> n;
+    bobombs.resize(n);
+    vec3 ipos;
+    for (int i = 0; i < n; i++) {
+        bobombs_pos >> ipos.x >> ipos.y >> ipos.z;
+        bobombs[i].init(ipos, _map);
+    }
+}
+
+void bobombs_structure::move(const vcl::vec3& char_pos, float t, float dt) {
+    for (auto i = bobombs.begin(); i != bobombs.end(); i++)
+        if (!i->disappear)
+            i->move(char_pos, t, dt);
+}
+
+void bobombs_structure::draw_nobillboards(std::map<std::string, GLuint>& shaders, scene_structure& scene, bool surf, bool wf) {
+    for (auto i = bobombs.begin(); i != bobombs.end(); i++)
+        if(!i->disappear)
+            i->draw_nobillboards(shaders, scene, surf, wf);
+}
+
+void bobombs_structure::draw_billboards(std::map<std::string, GLuint>& shaders, scene_structure& scene, bool bb, bool wf) {
+    for (auto i = bobombs.begin(); i != bobombs.end(); i++)
+        if (!i->disappear)
+            i->draw_billboards(shaders, scene, bb, wf);
 }
 
 #endif

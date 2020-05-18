@@ -41,7 +41,7 @@ struct scene_model : scene_base
     bridge_structure bridge;
     bubbles_structure bubbles;
     flight_model flight;
-    std::vector<bobomb_structure> bobombs;
+    bobombs_structure bobombs;
 
     gui_scene_structure gui_scene;
     vcl::timer_interval timer;

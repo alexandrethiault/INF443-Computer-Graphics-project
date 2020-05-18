@@ -29,16 +29,9 @@ void scene_model::setup_data(std::map<std::string,GLuint>& shaders, scene_struct
 
     bubbles.setup(&map);
 
-    flight.setup_flight(shaders, scene, &character);
+    bobombs.setup(&map);
 
-    std::fstream bobombs_pos("scenes/shared_assets/coords/bobomb.txt");
-    int n; bobombs_pos >> n;
-    bobombs.resize(n);
-    vec3 ipos;
-    for (int i = 0; i < n; i++) {
-        bobombs_pos >> ipos.x >> ipos.y >> ipos.z;
-        bobombs[i].init(ipos, &map);
-    }
+    flight.setup_flight(shaders, scene, &character);
 
     timer.scale = 1.0f;
     timer.t_max = 20.0f;
@@ -54,12 +47,11 @@ void scene_model::frame_draw(std::map<std::string, GLuint>& shaders, scene_struc
 
     chomp.move(flight.p, t, ((t < last_t) ? timer.t_max - timer.t_min : 0) + t - last_t);
     character.move(t, ((t < last_t) ? timer.t_max - timer.t_min : 0) + t - last_t);
+    bobombs.move(flight.p, t, ((t < last_t) ? timer.t_max - timer.t_min : 0) + t - last_t);
     star.move(t);
     bridge.move(t);
     bubbles.simulate();
     flight.simulate(); // Moves the character to the current flight position
-    for(auto i = bobombs.begin(); i != bobombs.end(); i++)
-        i->move(flight.p, t, ((t < last_t) ? timer.t_max - timer.t_min : 0) + t - last_t);
 
     if (gui_scene.lock_on_mario) scene.camera.translation = -flight.p; // camera frame center = Mario
     if (gui_scene.auto_orientation) {
@@ -70,13 +62,12 @@ void scene_model::frame_draw(std::map<std::string, GLuint>& shaders, scene_struc
     glEnable(GL_POLYGON_OFFSET_FILL); // avoids z-fighting when displaying wireframe
     chomp.draw_nobillboards(shaders, scene, gui_scene.surface, gui_scene.wireframe);
     map.draw_nobillboards(shaders, scene, gui_scene.surface, gui_scene.wireframe); // Including sky and 5 posts
+    bobombs.draw_nobillboards(shaders, scene, gui_scene.surface, gui_scene.wireframe);
     star.draw_nobillboards(shaders, scene, gui_scene.surface, gui_scene.wireframe); // 2 stars
     flight.draw_path(shaders, scene, gui_scene.display_keyframe, gui_scene.display_polygon);
     bridge.draw_bridge(shaders, scene, gui_scene.surface, gui_scene.wireframe);
     if (gui_scene.bubbles) bubbles.draw_bubbles(shaders, scene, gui_scene.surface, gui_scene.wireframe);
     if (gui_scene.mario) character.draw(shaders, scene, gui_scene.surface, gui_scene.wireframe);
-    for (std::vector<bobomb_structure>::iterator i = bobombs.begin(); i != bobombs.end(); i++)
-        i->draw_nobillboards(shaders, scene, gui_scene.surface, gui_scene.wireframe);
 
     //// BILLBOARDS ALWAYS LAST ////
 
@@ -84,11 +75,10 @@ void scene_model::frame_draw(std::map<std::string, GLuint>& shaders, scene_struc
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glDepthMask(false);
     // étoiles puis grille du chomp puis chomp (chaine) puis reste de la map (arbres, pièces)
+    bobombs.draw_billboards(shaders, scene, gui_scene.surface, gui_scene.wireframe);
     star.draw_billboards(shaders, scene, gui_scene.surface, gui_scene.wireframe); // Star eyes
     chomp.draw_billboards(shaders, scene, gui_scene.billboards, gui_scene.wireframe); // Eyes and chains
     map.draw_billboards(shaders, scene, gui_scene.billboards, gui_scene.wireframe, ((int)(16 * t)) % 4); // 2 types of grids and 17 trees
-    for (auto i = bobombs.begin(); i != bobombs.end(); i++)
-        i->draw_billboards(shaders, scene, gui_scene.billboards, gui_scene.wireframe);
     glDepthMask(true);
     glBindTexture(GL_TEXTURE_2D, scene.texture_white);
 
