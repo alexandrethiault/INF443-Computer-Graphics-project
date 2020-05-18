@@ -316,8 +316,8 @@ void bobomb_structure::move(const vcl::vec3& char_pos, float t, float dt)
     float z_floor = map->get_z(center + rel_position);
     vec3 impact, normal;
 
-    if (map->collision(center + rel_position + centre_corps, impact, normal) && dot(center + rel_position + centre_corps - impact, normal) < 0.f)
-        rel_position -= dot(center + rel_position + centre_corps - impact, normal) * normal;
+    if (map->collision_sphere(center + rel_position + centre_corps, cote_corps / 2.f, impact, normal) && dot(center + rel_position + centre_corps - cote_corps/2.f * normal - impact, normal) < 0.f)
+        rel_position -= dot(center + rel_position + centre_corps - cote_corps / 2.f * normal -  impact, normal) * normal;
 
     if ((center + rel_position).z - z_floor >= -0.1f) {
         if (falling && (center + rel_position).z - z_floor <= 0.01f) {
@@ -330,6 +330,7 @@ void bobomb_structure::move(const vcl::vec3& char_pos, float t, float dt)
         else {
             vspeed += -2.5f * dt;
             rel_position.z += vspeed * dt;
+            rel_position.z = std::max(rel_position.z, z_floor - center.z);
             falling = true;
         }
     }

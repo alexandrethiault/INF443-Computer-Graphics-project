@@ -58,7 +58,7 @@ void scene_model::frame_draw(std::map<std::string, GLuint>& shaders, scene_struc
     bridge.move(t);
     bubbles.simulate();
     flight.simulate(); // Moves the character to the current flight position
-    for(std::vector<bobomb_structure>::iterator i = bobombs.begin(); i != bobombs.end(); i++)
+    for(auto i = bobombs.begin(); i != bobombs.end(); i++)
         i->move(flight.p, t, ((t < last_t) ? timer.t_max - timer.t_min : 0) + t - last_t);
 
     if (gui_scene.lock_on_mario) scene.camera.translation = -flight.p; // camera frame center = Mario
@@ -87,7 +87,7 @@ void scene_model::frame_draw(std::map<std::string, GLuint>& shaders, scene_struc
     star.draw_billboards(shaders, scene, gui_scene.surface, gui_scene.wireframe); // Star eyes
     chomp.draw_billboards(shaders, scene, gui_scene.billboards, gui_scene.wireframe); // Eyes and chains
     map.draw_billboards(shaders, scene, gui_scene.billboards, gui_scene.wireframe, ((int)(16 * t)) % 4); // 2 types of grids and 17 trees
-    for (std::vector<bobomb_structure>::iterator i = bobombs.begin(); i != bobombs.end(); i++)
+    for (auto i = bobombs.begin(); i != bobombs.end(); i++)
         i->draw_billboards(shaders, scene, gui_scene.billboards, gui_scene.wireframe);
     glDepthMask(true);
     glBindTexture(GL_TEXTURE_2D, scene.texture_white);
