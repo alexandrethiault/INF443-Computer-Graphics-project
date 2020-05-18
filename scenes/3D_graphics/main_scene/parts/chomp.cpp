@@ -83,7 +83,7 @@ void chomp_structure::init(const vec3& _center)
     center = _center;
     rel_position = rush_speed = chain1 = chain2 = chain3 = chain4 = { 0,0,0 };
     angle = angular_v = speed = time_chasing = 0.0f;
-    rushing = falling = hide = false;
+    rushing = falling = false;
 
     mesh_drawable body = mesh_primitive_half_sphere(radius_chomp, { 0,0,0 }, 9, 5);
     body.uniform.shading = { 1,0,0 };
@@ -146,8 +146,6 @@ void chomp_structure::init(const vec3& _center)
 
 void chomp_structure::draw_nobillboards(std::map<std::string, GLuint>& shaders, scene_structure& scene, bool surf, bool wf)
 {
-    if (hide) return;
-
     glBindTexture(GL_TEXTURE_2D, texture_up);
     if (surf) draw_hierarchy_element(hierarchy["body_up"], scene.camera, shaders["mesh"]);
     if (wf) draw_hierarchy_element(hierarchy["body_up"], scene.camera, shaders["wireframe"]);
@@ -178,8 +176,6 @@ bool cmpbillboard(const vec3& u, const vec3& v, const vec3& cam_pos) { return (n
 
 void chomp_structure::draw_billboards(std::map<std::string, GLuint>& shaders, scene_structure& scene, bool bb, bool wf)
 {
-    if (hide) return;
-
     glBindTexture(GL_TEXTURE_2D, texture_eye); // Eyes first: a chain will always be in front of an eye OR invisible
     if (bb) draw_hierarchy_element(hierarchy["eye_left"], scene.camera, shaders["mesh"]);
     if (wf) draw_hierarchy_element(hierarchy["eye_left"], scene.camera, shaders["wireframe"]);
@@ -202,13 +198,6 @@ void chomp_structure::draw_billboards(std::map<std::string, GLuint>& shaders, sc
 void chomp_structure::move(const vcl::vec3& char_pos, float t, float dt)
 {
     if (dt > 0.1f) dt = 0.1f;
-
-    if (norm(char_pos - (center + rel_position)) >= 2.f)
-        hide = true;
-    if (norm(char_pos - (center + rel_position)) < 1.9f) // légère hystérésis pour éviter des scintillement
-        hide = false;
-
-    if (hide) return;
 
     // Open / close jaw, default to periodic
     mat3 R_jaw = rotation_from_axis_angle_mat3({ 0,1,0 }, -0.3f + -0.3f * std::sin(5 * 3.14f * t));

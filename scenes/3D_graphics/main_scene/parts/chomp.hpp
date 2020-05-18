@@ -6,7 +6,7 @@
 
 struct chomp_structure
 {
-    bool rushing, falling, hide;
+    bool rushing, falling;
     float radius_chomp = 0., radius_reach, radius_eye, angle, angular_v, max_angular_velocity, speed, max_speed, time_chasing;
     vcl::vec3 center, rel_position, chain1, chain2, chain3, chain4, rush_speed;
     vcl::hierarchy_mesh_drawable hierarchy;

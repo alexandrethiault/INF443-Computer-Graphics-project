@@ -162,16 +162,17 @@ void bobomb_structure::init(const vec3& _center, map_structure* _map)
     cote_corps = scaling * 0.3f;
     height_pied = scaling * 0.060f;
     height_yeux = scaling * 0.1f;
+    temps_explode = 5.f;
 
     radius_reach = scaling * cote_corps * 20.0f;
 
     max_angular_velocity = PI / 4;
     max_speed = cote_corps / 3.0f;
-    center = _center;
+    center = original_pos = _center;
     rel_position = rush_speed = { 0,0,0 };
     angular_v = hspeed = vspeed = time_chasing = 0.0f;
     angle = 0.0f;
-    rushing = exploding = disappear = falling = hide = false;
+    rushing = exploding = falling = hide = false;
 
     mesh_drawable corps = mesh_primitive_quad({ -cote_corps / 2.f, 0, 0 }, { cote_corps / 2.f, 0, 0 }, { cote_corps / 2.f , 0, cote_corps }, { -cote_corps / 2.f , 0, cote_corps });
     mesh_drawable boulon = mesh_primitive_boulon(radius_boulon, height_boulon, { 0, 0, 0 });
@@ -219,7 +220,7 @@ void bobomb_structure::init(const vec3& _center, map_structure* _map)
 
 void bobomb_structure::draw_nobillboards(std::map<std::string, GLuint>& shaders, scene_structure& scene, bool surf, bool wf)
 {
-    if (hide) return;
+    if (!rushing && !exploding && hide) return;
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); // avoids sampling artifacts
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -236,9 +237,8 @@ void bobomb_structure::draw_nobillboards(std::map<std::string, GLuint>& shaders,
 
 void bobomb_structure::draw_billboards(std::map<std::string, GLuint>& shaders, scene_structure& scene, bool bb, bool wf)
 {
-    if (hide) return;
+    if (!rushing && !exploding && hide) return;
 
-    int index;
     mat3 R;
 
     R = scene.camera.orientation * rotation_from_axis_angle_mat3({ 1, 0, 0 }, -PI / 2.);
@@ -263,7 +263,7 @@ void bobomb_structure::move(const vcl::vec3& char_pos, float t, float dt)
     if (norm(char_pos - (center + rel_position)) < 1.9f) // légère hystérésis pour éviter des scintillement
         hide = false;
 
-    if (hide) return;
+    if (!rushing && !exploding && hide) return;
 
     float w = .0f;
     float ampl = .0f;
@@ -276,7 +276,7 @@ void bobomb_structure::move(const vcl::vec3& char_pos, float t, float dt)
         float da = atan2(char_pos.y - (center + rel_position).y, char_pos.x - (center + rel_position).x) - angle;
         angle += da;
         rel_position += dt* vec3{ rush_speed.x, rush_speed.y, 0 };
-        if (time_chasing > 50.f) {
+        if (time_chasing > temps_explode) {
             rushing = false;
             exploding = true;
             time_chasing = 0.0f;
@@ -288,7 +288,9 @@ void bobomb_structure::move(const vcl::vec3& char_pos, float t, float dt)
         time_chasing += dt;
         if (time_chasing > .3f) {
             exploding = false;
-            disappear = true;
+            hierarchy["Super_Global"].transform.scaling = 1.f;
+            center = original_pos;
+            rel_position = { 0, 0, 0 };
         }
     }
     else if (norm(char_pos - (center + rel_position)) < radius_reach) { // Target before attack
@@ -370,20 +372,17 @@ void bobombs_structure::setup(map_structure* _map) {
 
 void bobombs_structure::move(const vcl::vec3& char_pos, float t, float dt) {
     for (auto i = bobombs.begin(); i != bobombs.end(); i++)
-        if (!i->disappear)
-            i->move(char_pos, t, dt);
+        i->move(char_pos, t, dt);
 }
 
 void bobombs_structure::draw_nobillboards(std::map<std::string, GLuint>& shaders, scene_structure& scene, bool surf, bool wf) {
     for (auto i = bobombs.begin(); i != bobombs.end(); i++)
-        if(!i->disappear)
-            i->draw_nobillboards(shaders, scene, surf, wf);
+        i->draw_nobillboards(shaders, scene, surf, wf);
 }
 
 void bobombs_structure::draw_billboards(std::map<std::string, GLuint>& shaders, scene_structure& scene, bool bb, bool wf) {
     for (auto i = bobombs.begin(); i != bobombs.end(); i++)
-        if (!i->disappear)
-            i->draw_billboards(shaders, scene, bb, wf);
+        i->draw_billboards(shaders, scene, bb, wf);
 }
 
 #endif

@@ -390,6 +390,8 @@ void map_structure::draw_nobillboards(std::map<std::string, GLuint>& shaders, sc
         if (surf) draw(map[i], scene.camera, shaders["mesh"]);
         if (wf) draw(map[i], scene.camera, shaders["wireframe"]);
     }
+
+    glBindTexture(GL_TEXTURE_2D, scene.texture_white);
 }
 
 bool cmpbillboard(std::pair<vec3, std::pair<GLuint, bool> >& u, std::pair<vec3, std::pair<GLuint, bool> >& v, vec3& cam_pos)

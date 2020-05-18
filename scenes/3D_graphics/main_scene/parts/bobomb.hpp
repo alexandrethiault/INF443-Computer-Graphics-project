@@ -8,9 +8,9 @@
 
 struct bobomb_structure
 {
-    bool rushing, exploding, disappear, falling, hide;
-    float radius_boulon = 0., height_boulon, cote_corps, height_pied, height_yeux, radius_reach, angle, angular_v, max_angular_velocity, hspeed, vspeed, max_speed, time_chasing, scaling;
-    vcl::vec3 center, centre_corps, rel_position, rush_speed;
+    bool rushing, exploding, falling, hide;
+    float radius_boulon = 0., height_boulon, cote_corps, height_pied, height_yeux, radius_reach, angle, angular_v, max_angular_velocity, hspeed, vspeed, max_speed, time_chasing, scaling, temps_explode;
+    vcl::vec3 center, centre_corps, rel_position, rush_speed, original_pos;
     vcl::hierarchy_mesh_drawable hierarchy;
     GLuint texture_yeux, texture_corps;
     vcl::vec3 couleur_pied, couleur_boulon;
