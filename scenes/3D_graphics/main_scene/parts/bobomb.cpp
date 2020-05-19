@@ -19,7 +19,7 @@ std::uniform_real_distribution<float> distribb(0.0, 1.0);
 mesh mesh_primitive_boulon(float radius, float height, const vec3& p0)
 {
     mesh shape;
-    unsigned int N = 6;
+    size_t N = 6;
     for (size_t ku = 0; ku < N; ++ku) {
             const float u = static_cast<float>(ku) / static_cast<float>(N);
 
@@ -37,15 +37,16 @@ mesh mesh_primitive_boulon(float radius, float height, const vec3& p0)
     shape.position.push_back(vec3{ 0,0,height } + p0);
     shape.normal.push_back({ 0, 0, 1 });
 
-    for (size_t k = 0; k < N; ++k) {
+    unsigned int Ns = static_cast<unsigned int>(N);
+    for (unsigned int k = 0; k < Ns; ++k) {
         unsigned int u00 = 2 * k;
         unsigned int u01 = 2 * k + 1;
-        unsigned int u10 = (2 * (k + 1)) % (2 * N);
-        unsigned int u11 = (2 * (k + 1) + 1) % (2 * N);
+        unsigned int u10 = (2 * (k + 1)) % (2 * Ns);
+        unsigned int u11 = (2 * (k + 1) + 1) % (2 * Ns);
 
         shape.connectivity.push_back({ u00, u01, u10 });
         shape.connectivity.push_back({ u11, u10, u01 });
-        shape.connectivity.push_back({ u11, u01, (unsigned int)(2 * N) });
+        shape.connectivity.push_back({ u11, u01, 2 * Ns });
     }
     
     return shape;
@@ -54,22 +55,22 @@ mesh mesh_primitive_boulon(float radius, float height, const vec3& p0)
 mesh mesh_pied_bobomb(int x_sym) {
     mesh shape;
     
-    shape.position.push_back({ x_sym * 1.839133f, -6.181050, 0.771053 });
-    shape.position.push_back({ x_sym * 3.808849f, 0.193048, 0.700534 });
-    shape.position.push_back({ x_sym * 2.976701f, -0.280741, 3.174895 });
-    shape.position.push_back({ x_sym * 1.731257f, 4.605570, -1.827734 });
-    shape.position.push_back({ x_sym * -1.546808f, 4.606693, -1.686860 });
-    shape.position.push_back({ x_sym * 2.968143f, 5.161891, 0.747666 });
-    shape.position.push_back({ x_sym * -2.557761f, 5.163801, 0.985134 });
-    shape.position.push_back({ x_sym * -1.270377f, -5.518005, -1.721171 });
-    shape.position.push_back({ x_sym * -1.532564f, -6.179862, 0.915956 });
-    shape.position.push_back({ x_sym * -2.859974f, 0.294817, -1.639984 });
-    shape.position.push_back({ x_sym * -3.496593f, 0.195560, 1.014470 });
-    shape.position.push_back({ x_sym * 1.352069f, -5.518919, -1.833870 });
-    shape.position.push_back({ x_sym * 3.040564f, 0.292791, -1.893552 });
-    shape.position.push_back({ x_sym * -1.407454f, 3.563577, 3.747142 });
-    shape.position.push_back({ x_sym * 2.057952f, 3.562372, 3.598226 });
-    shape.position.push_back({ x_sym * -2.455520f, -0.278860, 3.408339 });
+    shape.position.push_back({ x_sym * 1.839133f, -6.181050f, 0.771053f });
+    shape.position.push_back({ x_sym * 3.808849f, 0.193048f, 0.700534f });
+    shape.position.push_back({ x_sym * 2.976701f, -0.280741f, 3.174895f });
+    shape.position.push_back({ x_sym * 1.731257f, 4.605570f, -1.827734f });
+    shape.position.push_back({ x_sym * -1.546808f, 4.606693f, -1.686860f });
+    shape.position.push_back({ x_sym * 2.968143f, 5.161891f, 0.747666f });
+    shape.position.push_back({ x_sym * -2.557761f, 5.163801f, 0.985134f });
+    shape.position.push_back({ x_sym * -1.270377f, -5.518005f, -1.721171f });
+    shape.position.push_back({ x_sym * -1.532564f, -6.179862f, 0.915956f });
+    shape.position.push_back({ x_sym * -2.859974f, 0.294817f, -1.639984f });
+    shape.position.push_back({ x_sym * -3.496593f, 0.195560f, 1.014470f });
+    shape.position.push_back({ x_sym * 1.352069f, -5.518919f, -1.833870f });
+    shape.position.push_back({ x_sym * 3.040564f, 0.292791f, -1.893552f });
+    shape.position.push_back({ x_sym * -1.407454f, 3.563577f, 3.747142f });
+    shape.position.push_back({ x_sym * 2.057952f, 3.562372f, 3.598226f });
+    shape.position.push_back({ x_sym * -2.455520f, -0.278860f, 3.408339f });
     shape.connectivity.push_back({ 0,1,2 });
     shape.connectivity.push_back({ 3,4,5 });
     shape.connectivity.push_back({ 4,6,5 });
@@ -98,22 +99,22 @@ mesh mesh_pied_bobomb(int x_sym) {
     shape.connectivity.push_back({ 6,10,15 });
     shape.connectivity.push_back({ 15,8,2 });
     shape.connectivity.push_back({ 8,0,2 });
-    shape.normal.push_back({ x_sym * 0.5257f, -0.7915, 0.3117 });
-    shape.normal.push_back({ x_sym * 0.9987f, -0.0463, 0.0191 });
-    shape.normal.push_back({ x_sym * 0.6234f, -0.1714, 0.7628 });
-    shape.normal.push_back({ x_sym * 0.3188f, 0.5824, -0.7478 });
-    shape.normal.push_back({ x_sym * -0.4076f, 0.5729, -0.7111 });
-    shape.normal.push_back({ x_sym * 0.6478f, 0.7590, 0.0645 });
-    shape.normal.push_back({ x_sym * -0.6465f, 0.7565, 0.0979 });
-    shape.normal.push_back({ x_sym * -0.4752f, -0.5625, -0.6765 });
-    shape.normal.push_back({ x_sym * -0.5038f, -0.7886, 0.3525 });
-    shape.normal.push_back({ x_sym * -0.6971f, 0.0076, -0.7169 });
-    shape.normal.push_back({ x_sym * -0.9973f, -0.0272, 0.0684 });
-    shape.normal.push_back({ x_sym * 0.4041f, -0.5680, -0.7170 });
-    shape.normal.push_back({ x_sym * 0.6304f, -0.0211, -0.7760 });
-    shape.normal.push_back({ x_sym * -0.3450f, 0.4193, 0.8397 });
-    shape.normal.push_back({ x_sym * 0.4321f, 0.4122, 0.8021 });
-    shape.normal.push_back({ x_sym * -0.5545f, -0.1713, 0.8144 });
+    shape.normal.push_back({ x_sym * 0.5257f, -0.7915f, 0.3117f });
+    shape.normal.push_back({ x_sym * 0.9987f, -0.0463f, 0.0191f });
+    shape.normal.push_back({ x_sym * 0.6234f, -0.1714f, 0.7628f });
+    shape.normal.push_back({ x_sym * 0.3188f, 0.5824f, -0.7478f });
+    shape.normal.push_back({ x_sym * -0.4076f, 0.5729f, -0.7111f });
+    shape.normal.push_back({ x_sym * 0.6478f, 0.7590f, 0.0645f });
+    shape.normal.push_back({ x_sym * -0.6465f, 0.7565f, 0.0979f });
+    shape.normal.push_back({ x_sym * -0.4752f, -0.5625f, -0.6765f });
+    shape.normal.push_back({ x_sym * -0.5038f, -0.7886f, 0.3525f });
+    shape.normal.push_back({ x_sym * -0.6971f, 0.0076f, -0.7169f });
+    shape.normal.push_back({ x_sym * -0.9973f, -0.0272f, 0.0684f });
+    shape.normal.push_back({ x_sym * 0.4041f, -0.5680f, -0.7170f });
+    shape.normal.push_back({ x_sym * 0.6304f, -0.0211f, -0.7760f });
+    shape.normal.push_back({ x_sym * -0.3450f, 0.4193f, 0.8397f });
+    shape.normal.push_back({ x_sym * 0.4321f, 0.4122f, 0.8021f });
+    shape.normal.push_back({ x_sym * -0.5545f, -0.1713f, 0.8144f });
 
     return shape;
 }
@@ -147,16 +148,17 @@ mesh mesh_eyes(float radius, float angle, float height) {
     return shape;
 }
 
-void bobomb_structure::init(const vec3& _center, map_structure* _map)
+void bobomb_structure::init(const vec3& _center, map_structure* _map, bridge_structure* _bridge)
 {
     if (radius_boulon) {
-        std::cout << "Tentative de re-initialiser un chomp deja initialise." << std::endl;
+        std::cout << "Tentative de re-initialiser une bobomb deja initialisee." << std::endl;
         return;
     }
 
     map = _map;
+    bridge = _bridge;
 
-    scaling = 0.3f;
+    scaling = 0.4f;
     radius_boulon = scaling * 0.075f;
     height_boulon = scaling * 0.06f;
     cote_corps = scaling * 0.3f;
@@ -329,14 +331,19 @@ void bobomb_structure::move(const vcl::vec3& char_pos, float t, float dt)
         rel_position = impact - center;
         vspeed = 0.f;
     }
+    else if (bridge->ground_collision(center + rel_position, impact, normal)) {
+        rel_position = impact - center;
+        vspeed = 0.f;
+    }
     else {
         vspeed += -2.5f * dt;
         rel_position.z += vspeed * dt;
     }
     if (map->wall_collision(center + rel_position + centre_corps, impact, normal, cote_corps / 2.f))// && dot(center + rel_position + centre_corps - cote_corps / 2.f * normal - impact, normal) < 0.f)
-        rel_position = impact + normal * cote_corps / 2.f - (center + centre_corps);
+        rel_position = impact + normal * cote_corps / 1.999f - (center + centre_corps);
     if (map->wall_collision(center + rel_position + centre_corps, impact, normal, cote_corps / 2.f))// && dot(center + rel_position + centre_corps - cote_corps / 2.f * normal - impact, normal) < 0.f)
         rel_position = impact + normal * cote_corps / 2.f - (center + centre_corps);
+    
     
 
     /*if ((center + rel_position).z - z_floor >= -0.1f) {
@@ -369,7 +376,7 @@ vcl::vec3 bobomb_structure::get_position() {
     return center + rel_position;
 }
 
-void bobombs_structure::setup(map_structure* _map) {
+void bobombs_structure::setup(map_structure* _map, bridge_structure* _bridge) {
 
     std::fstream bobombs_pos("scenes/shared_assets/coords/bobomb.txt");
     int n; bobombs_pos >> n;
@@ -377,7 +384,7 @@ void bobombs_structure::setup(map_structure* _map) {
     vec3 ipos;
     for (int i = 0; i < n; i++) {
         bobombs_pos >> ipos.x >> ipos.y >> ipos.z;
-        bobombs[i].init(ipos, _map);
+        bobombs[i].init(ipos, _map, _bridge);
     }
 }
 

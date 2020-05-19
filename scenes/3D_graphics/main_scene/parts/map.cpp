@@ -87,13 +87,14 @@ float map_structure::get_z(vcl::vec3 position) {
     return nearest;
 }
 
-void map_structure::init(const char* MTLpath, const char* OBJpath)
+void map_structure::init(const char* MTLpath, const char* OBJpath, character_structure* _character)
 {
     grid.resize(grid_size);
     loadMTL(MTLpath);
     loadOBJ(OBJpath);
     create_sky(); // Skybox  
     other_objects();
+    character = _character;
 }
 
 void map_structure::create_sky()
@@ -109,7 +110,7 @@ void map_structure::create_sky()
 void map_structure::other_objects()
 {
     // Posts, for chain chomp and also other random positions
-    mesh _post = mesh_primitive_cylinder(0.05f, { 0,0,0 }, { 0,0,0.23f }, 9);
+    mesh _post = mesh_primitive_cylinder(0.05f, { 0,0,0 }, { 0,0,0.23f }, 9, 2);
     for (int i = 0; i < (int)_post.texture_uv.size(); i++)  _post.texture_uv[i].x *= 4;
     post = _post;
     post.uniform.shading = { 1,0,0 };
@@ -341,7 +342,7 @@ void map_structure::loadOBJ(const char* path)
     miny -= triangle::ground_collision_depth;
     int ind = 0;
     for (triangle& tri : map_triangle) {
-        int mini = grid_size, minj = grid_size, maxi = 0, maxj = 0, i, j;
+        int mini = static_cast<int>(grid_size), minj = static_cast<int>(grid_size), maxi = 0, maxj = 0, i, j;
         for (vec3 p : {tri.p1, tri.p2, tri.p3}) {
             i = static_cast<int>((p.x - minx) / (maxx - minx) * grid_size);
             j = static_cast<int>((p.y - miny) / (maxy - miny) * grid_size);
@@ -418,7 +419,7 @@ bool cmpbillboard(std::pair<vec3, std::pair<GLuint, bool> >& u, std::pair<vec3, 
     return (norm(u.first - cam_pos) > norm(v.first - cam_pos));
 }
 
-void map_structure::draw_billboards(std::map<std::string, GLuint>& shaders, scene_structure& scene, bool bb, bool wf, int coin_rotation)
+void map_structure::draw_billboards(std::map<std::string, GLuint>& shaders, scene_structure& scene, bool bb, bool wf, const int coin_rotation)
 {
     for (int i = 0; i < 2; i++) {
         glBindTexture(GL_TEXTURE_2D, map_textures[texture_indices[i]]);
@@ -429,27 +430,27 @@ void map_structure::draw_billboards(std::map<std::string, GLuint>& shaders, scen
     }
 
     std::vector<std::pair<vec3, std::pair<GLuint, bool> > > bb_positions;
-    int i = coin_rotation;
-    assert(0 <= i && i < 4);
+    assert(0 <= coin_rotation && coin_rotation < 4);
     for (vec3 tree_position : tree_positions)
         bb_positions.push_back(std::make_pair(tree_position, std::make_pair(texture_tree, true)));
     for (vec3 red_coin_position : red_coin_positions)
-        bb_positions.push_back(std::make_pair(red_coin_position, std::make_pair(texture_coin[i], true)));
-    for (vec3 yellow_coin_position : yellow_coin_positions)
-        bb_positions.push_back(std::make_pair(yellow_coin_position, std::make_pair(texture_coin[i], false)));
+        bb_positions.push_back(std::make_pair(red_coin_position, std::make_pair(texture_coin[coin_rotation], true)));
+    for (vec3 yellow_coin_position : yellow_coin_positions) { // don't draw yellow coins too far away from Mario
+        if (norm(character->get_translation() - yellow_coin_position) < 2.0f)
+            bb_positions.push_back(std::make_pair(yellow_coin_position, std::make_pair(texture_coin[coin_rotation], false)));
+    }
     std::sort(bb_positions.begin(), bb_positions.end(),
         [&scene](auto u, auto v) -> bool {return cmpbillboard(u, v, scene.camera.camera_position()); });
     for (auto bb_position : bb_positions) {
         vec3 dpos = scene.camera.camera_position() - bb_position.first;
-        if (bb_position.second.first == texture_coin[i]) {
+        if (bb_position.second.first == texture_coin[coin_rotation]) {
             if (bb_position.second.second) coin.uniform.color = { 1,0,0 };
             else coin.uniform.color = { 1,1,0 };
             coin.uniform.transform.rotation = rotation_from_axis_angle_mat3({ 0,0,1 }, atan2(dpos.y, dpos.x)) * mat3 { 0, 0, 1, 1, 0, 0, 0, 1, 0 };
             coin.uniform.transform.translation = bb_position.first;
             glBindTexture(GL_TEXTURE_2D, bb_position.second.first);
 
-            if (bb && (bb_position.second.second || norm(scene.frame_camera.uniform.transform.translation - bb_position.first) < 2))
-                draw(coin, scene.camera, shaders["mesh"]); // don't draw yellow coins that are too far away from camera frame center
+            if (bb) draw(coin, scene.camera, shaders["mesh"]);
             if (wf) draw(coin, scene.camera, shaders["wireframe"]);
         }
         else {

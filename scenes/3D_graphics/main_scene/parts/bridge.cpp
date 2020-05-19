@@ -11,9 +11,13 @@ void bridge_structure::setup(vec3& _center, vec3& len, vec3& wid, vec3& hei)
 {
     center = _center;
     rotation_axis = wid;
-    thetamax = 3.14159f / 16;
-    theta = 0;
-    period = 5;
+    period = 5; // Period of residual movement
+    thetamax = 3.14159f / 50; // Maximum angle of residual movement
+    theta = 0; // Residual angle = thetamax*sin(2*pi*t/period)
+    mg = 0.5f; // mass*gravity, considered constant for bobombs
+    kappa = 1.0f; // torsion coefficient for tau : the lowest it is, the more the bridge will oscillate (conservative)
+    invL = 1.0f; // All that matters is mg*invL and kappa*invL so this one is quite useless
+    f = 0.1f; // The biggest f is, the strongest resistance to oscillation will be
     mesh _bridge = mesh_primitive_parallelepiped(-len/2-wid/2, len, wid, hei);
     _bridge.texture_uv = {
         {0,0},{5,0},{5,1},{0,1},
@@ -25,35 +29,45 @@ void bridge_structure::setup(vec3& _center, vec3& len, vec3& wid, vec3& hei)
     };
     bridge = _bridge; // conversion mesh -> mesh_drawable
     bridge.uniform.transform.translation = center;
+    bridge.uniform.shading = { 0.7f, 0.3f, 0.0f };
     texture_bridge = create_texture_gpu(image_load_png("scenes/shared_assets/textures/wood.png"));
+    for (uint3 tri : _bridge.connectivity) {
+        vec3 p1 = _bridge.position[tri[0]];
+        vec3 p2 = _bridge.position[tri[1]];
+        vec3 p3 = _bridge.position[tri[2]];
+        vec3 fakenormal = _bridge.normal[tri[0]];
+        triangles0.push_back(triangle(p1, p2, p3, fakenormal));
+    }
+    minx = center.x + std::min(len.x, std::min(hei.x, wid.x)) - 1.0f;
+    maxx = center.x + std::max(len.x, std::max(hei.x, wid.x)) + 1.0f;
+    miny = center.y + std::min(len.y, std::min(hei.y, wid.y)) - 1.0f;
+    maxy = center.y + std::max(len.y, std::max(hei.y, wid.y)) + 1.0f;
 }
 
-void bridge_structure::move(float t)
+void bridge_structure::move(float t, float dt)
 {
+    // Momentums: sigma, tau.
+    // sigma = incremented in ground_collision, positive or negative depending on where thing(s) stand on the bridge
+    // tau = torsion-spring torque: angle caused by momentum wants to go back to 0 (conservative)
+    // Angular momentum theorem: L*d2phi = sigma+tau (L is a constant)
+
+    tau = -kappa * phi;
+    d2phi = (sigma + tau) * invL - f * dphi;
+    dphi += d2phi * dt;
+    phi += dphi * dt;
     theta = thetamax * std::sin(2 * 3.14159f * t / period);
-    bridge.uniform.transform.rotation = rotation_from_axis_angle_mat3(rotation_axis, theta);
+
+    mat3 R = rotation_from_axis_angle_mat3(rotation_axis, theta+phi);
+    bridge.uniform.transform.rotation = R;
+    triangles.clear();
+    for (triangle& tri : triangles0)
+        triangles.push_back(triangle(R*tri.p1+center, R*tri.p2+center, R*tri.p3+center, tri.n));
     
-    /* Forces si Mario doit peser sur le pont
+    sigma = 0.0f; // To be recomputed next time
 
-    float pos_mario = 0; // entre -1 et 1 pour parler du côté où Mario appuie sur le pont
-    if (mario_on_bridge()) pos_mario = get_bridge_pos(); // ces fonctions sont à coder
-
-    const vec3 g = { 0,0,-9.81f};
-    vec3 force; // A COMPLETER
-    // Numerical Integration
-    for (int i = 0; i < N; i++) {
-        v = v + dt * force / m;
-        theta = theta + dt * v;
-        if (theta>thetamax) {
-            theta = thetamax;
-            if (v>0) v=0;
-        }
-        if (theta<-thetamax) {
-            theta = -thetamax;
-            if (v<0) v=0;
-        }
-    }
-    */
+    // Debug : faire peser un objet de manière permanente à gauche
+    // vec3 impact, normal;
+    // ground_collision(R*vec3{ 0.63f,0.63f,0 }+center, impact, normal);
 }
 
 void bridge_structure::draw_bridge(std::map<std::string, GLuint>& shaders, scene_structure& scene, bool surf, bool wf)
@@ -64,6 +78,18 @@ void bridge_structure::draw_bridge(std::map<std::string, GLuint>& shaders, scene
     if (surf) draw(bridge, scene.camera, shaders["mesh"]);
     if (wf) draw(bridge, scene.camera, shaders["wireframe"]);
     glBindTexture(GL_TEXTURE_2D, scene.texture_white);
+}
+
+bool bridge_structure::ground_collision(vcl::vec3 position, vcl::vec3& impact, vcl::vec3& normal)
+{
+    if (position.x < minx || position.x > maxx || position.y < miny || position.y > maxy)
+        return false;
+    for (triangle& tri : triangles)
+        if (tri.n.z > 0.01f && tri.collision(position, impact, normal)) {
+            sigma += cross(impact-center, rotation_axis).z * mg; // Momentum = distance to axis * force (gravity)
+            return true;
+        }
+    return false; // impact may have been modified anyway in the process
 }
 
 #endif

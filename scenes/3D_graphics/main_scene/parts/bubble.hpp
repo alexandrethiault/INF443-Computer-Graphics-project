@@ -9,10 +9,9 @@ struct bubble_structure
 {
     vcl::vec3 p; // Position
     vcl::vec3 v; // Speed
-    bool squishing;
-    bool unsquishing;
-    int squish_counter;
-    float squish; // si squishing, squish peut aller de 0 à 1, et si unsquishing, de 1 à 0
+    bool squishing = false, unsquishing = false;
+    int squish_counter = 0;
+    float squish = 0.0f; // If squishing, squish will grow from 0 to 1, and if unsquishing, decrease back to 0
 
     bubble_structure() {}
 

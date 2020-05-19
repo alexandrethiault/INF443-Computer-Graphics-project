@@ -16,6 +16,7 @@ struct character_structure
     void draw(std::map<std::string, GLuint>& shaders, scene_structure& scene, bool surf, bool wf);
     int find_mesh_index(std::string name);
     void move(float t, float dt);
+    vcl::vec3 get_translation();
     void set_translation(vcl::vec3& p);
     void set_rotation(vcl::mat3& R);
 

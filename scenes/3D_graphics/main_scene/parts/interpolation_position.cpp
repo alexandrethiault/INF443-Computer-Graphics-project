@@ -34,7 +34,7 @@ void cardinal_spline_interpolation(float t, buffer<vec3t>& keyframes, float mu, 
     d2p = (12 * s - 6) * p1 + (6 * s - 4) * d1 + (-12 * s + 6) * p2 + (6 * s - 2) * d2;
 }
 
-void flight_model::setup_flight(std::map<std::string,GLuint>& shaders, scene_structure& scene, character_structure* c_)
+void flight_model::setup_flight(character_structure* c_)
 {
     std::fstream kf("scenes/shared_assets/coords/keyframes.txt");
     int n; kf >> n;
@@ -48,12 +48,10 @@ void flight_model::setup_flight(std::map<std::string,GLuint>& shaders, scene_str
     character = c_;
 
     keyframe_visual = mesh_primitive_sphere();
-    keyframe_visual.shader = shaders["mesh"];
     keyframe_visual.uniform.color = {1,1,1};
     keyframe_visual.uniform.transform.scaling = 0.05f;
 
     keyframe_picked = mesh_primitive_sphere();
-    keyframe_picked.shader = shaders["mesh"];
     keyframe_picked.uniform.color = {1,0,0};
     keyframe_picked.uniform.transform.scaling = 0.055f;
 
@@ -98,14 +96,14 @@ void flight_model::draw_path(std::map<std::string, GLuint>& shaders, scene_struc
     if (kf) {
         for(size_t k=0; k<keyframes.size(); ++k) {
             keyframe_visual.uniform.transform.translation = keyframes[k].p;
-            draw(keyframe_visual, scene.camera);
+            draw(keyframe_visual, scene.camera, shaders["mesh"]);
         }
     }
 
     // Draw selected sphere in red
     if (picked_object!=-1) {
         keyframe_picked.uniform.transform.translation = keyframes[picked_object].p;
-        draw(keyframe_picked, scene.camera);
+        draw(keyframe_picked, scene.camera, shaders["mesh"]);
     }
 
     // Draw segments between each keyframe

@@ -2,6 +2,7 @@
 
 #include "main/scene_base/base.hpp"
 #include "scenes/3D_graphics/main_scene/parts/mtltexture.hpp"
+#include "scenes/3D_graphics/main_scene/parts/character.hpp"
 
 #ifdef MAIN_SCENE
 
@@ -16,17 +17,18 @@ struct triangle
 
 struct map_structure
 {
-    void init(const char* MTLpath, const char* OBJpath);
+    void init(const char* MTLpath, const char* OBJpath, character_structure* _character);
 
     vcl::mesh_drawable sky, post, post_top, billboard, coin, block, block_v, lift, lift_side;
     GLuint texture_sky, texture_post, texture_post_top, texture_tree, texture_red_block, texture_red_block_v, texture_lift, texture_lift_side;
     GLuint texture_coin[4];
     std::vector<vcl::vec3> post_positions, tree_positions, red_block_positions, yellow_coin_positions, red_coin_positions;
+    character_structure* character = nullptr;
 
     void create_sky();
     void other_objects();
 
-    float minx = 100.0, maxx = -100.0, miny = 100.0, maxy = -100.0, minz = 100.0, maxz = -100.0;
+    float minx = 100.0, maxx = -100.0, miny = 100.0, maxy = -100.0;
     const size_t grid_size = 16;
     std::vector<triangle> map_triangle;
     vcl::buffer2D< std::vector<triangle*> > grid;
@@ -41,7 +43,7 @@ struct map_structure
     void loadMTL(const char* path);
     void loadOBJ(const char* path);
     void draw_nobillboards(std::map<std::string, GLuint>& shaders, scene_structure& scene, bool surf, bool wf);
-    void draw_billboards(std::map<std::string, GLuint>& shaders, scene_structure& scene, bool bb, bool wf, int coin_rotation);
+    void draw_billboards(std::map<std::string, GLuint>& shaders, scene_structure& scene, bool bb, bool wf, const int coin_rotation);
 };
 
 

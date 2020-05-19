@@ -20,7 +20,8 @@ void scene_model::setup_data(std::map<std::string,GLuint>& shaders, scene_struct
 
     map.init(
         "scenes/shared_assets/models/Bob-omb/Bob-omb Battlefield.mtl",
-        "scenes/shared_assets/models/Bob-omb/Bob-omb Battlefield.obj"
+        "scenes/shared_assets/models/Bob-omb/Bob-omb Battlefield.obj",
+        &character
     );
 
     star.create_star();
@@ -29,9 +30,9 @@ void scene_model::setup_data(std::map<std::string,GLuint>& shaders, scene_struct
 
     bubbles.setup(&map);
 
-    bobombs.setup(&map);
+    bobombs.setup(&map, &bridge); // Pointers used for collisions
 
-    flight.setup_flight(shaders, scene, &character);
+    flight.setup_flight(&character);
 
     timer.scale = 1.0f;
     timer.t_max = 20.0f;
@@ -49,7 +50,7 @@ void scene_model::frame_draw(std::map<std::string, GLuint>& shaders, scene_struc
     character.move(t, ((t < last_t) ? timer.t_max - timer.t_min : 0) + t - last_t);
     bobombs.move(flight.p, t, ((t < last_t) ? timer.t_max - timer.t_min : 0) + t - last_t);
     star.move(t);
-    bridge.move(t);
+    bridge.move(t, ((t < last_t) ? timer.t_max - timer.t_min : 0) + t - last_t);
     bubbles.simulate();
     flight.simulate(); // Moves the character to the current flight position
 

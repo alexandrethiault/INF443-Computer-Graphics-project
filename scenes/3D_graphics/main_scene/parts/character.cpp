@@ -128,6 +128,12 @@ void character_structure::move(float t, float dt)
     hierarchy.update_local_to_global_coordinates();
 }
 
+vec3 character_structure::get_translation()
+{
+    //return vec3{ 1.900440f, - 3.768835f, 3.318513f };
+    return hierarchy["Corps"].transform.translation;
+}
+
 void character_structure::set_translation(vcl::vec3& p)
 {
     hierarchy["Corps"].transform.translation = p;
