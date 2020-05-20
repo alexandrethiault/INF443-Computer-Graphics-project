@@ -33,7 +33,8 @@ struct map_structure
     std::vector<triangle> map_triangle;
     vcl::buffer2D< std::vector<triangle*> > grid;
     bool ground_collision(vcl::vec3 position, vcl::vec3& impact, vcl::vec3& normal);
-    bool wall_collision(vcl::vec3 position, vcl::vec3& impact, vcl::vec3& normal, float margin=0.0f);
+    bool wall_collision(vcl::vec3 position, vcl::vec3& impact, vcl::vec3& normal, float margin);
+    bool ceiling_collision(vcl::vec3 position, vcl::vec3& impact, vcl::vec3& normal, float margin);
     float get_z(vcl::vec3 position);
 
     std::vector<vcl::mesh_drawable> map;

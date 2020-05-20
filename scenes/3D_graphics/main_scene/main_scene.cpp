@@ -57,7 +57,7 @@ void scene_model::frame_draw(std::map<std::string, GLuint>& shaders, scene_struc
     bubbles.simulate();
     flight.simulate(); // Moves the character to the current flight position
 
-    if (gui_scene.lock_on_mario) scene.camera.translation = -flight.p; // camera frame center = Mario
+    if (gui_scene.lock_on_mario) scene.camera.translation = -pbobomb.get_position(); // camera frame center = Mario
     if (gui_scene.auto_orientation) {
         scene.camera.scale = 1;
         scene.camera.orientation = rotation_to_vector_mat3({ -flight.dp.z,-flight.dp.x,flight.dp.y });

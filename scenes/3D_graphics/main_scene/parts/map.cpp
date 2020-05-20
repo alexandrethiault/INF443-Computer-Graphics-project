@@ -13,7 +13,7 @@ const std::string map_dir = "scenes/shared_assets/models/Bob-omb";
 
 float triangle::ground_collision_depth = 0.3f;
 float triangle::ground_collision_stick = 0.01f;
-float triangle::wall_collision_depth = 0.05f;
+float triangle::wall_collision_depth = 0.02f;
 
 shading_mesh shading = { 0.7f,0.3f,0 };
 
@@ -33,7 +33,7 @@ triangle::triangle(vec3& p1, vec3& p2, vec3& p3, vec3& fakenormal)
 // https://www.youtube.com/watch?v=UnU7DJXiMAQ
 bool triangle::collision(vec3 position, vec3& impact, vec3& normal, float margin)
 {
-    if (n.z >= 0.01f) { // Triangle is considered ground, hitboxes are vertical
+    if (n.z >= 0.3f) { // Triangle is considered ground, hitboxes are vertical
         impact.x = position.x;
         impact.y = position.y;
         impact.z = (d - impact.x * n.x - impact.y * n.y) / n.z;
@@ -42,7 +42,7 @@ bool triangle::collision(vec3 position, vec3& impact, vec3& normal, float margin
         normal = n;
         return (cross(p2 - p1, impact - p1).z > 0 && cross(p3 - p2, impact - p2).z > 0 && cross(p1 - p3, impact - p3).z > 0);
     }
-    else if (n.z > -0.01f) { // Triangle is considered wall
+    else if (n.z > -0.01f) { // Triangle is considered wall (I chose to classify steep ground as walls)
         float distance_to_plane = dot(position, n) - d;
         if (distance_to_plane < -wall_collision_depth || distance_to_plane > margin) return false;
         impact = position - distance_to_plane * n;
@@ -50,7 +50,13 @@ bool triangle::collision(vec3 position, vec3& impact, vec3& normal, float margin
         return (dot(cross(p2 - p1, impact - p1), n) > 0 && dot(cross(p3 - p2, impact - p2), n) > 0 && dot(cross(p1 - p3, impact - p3), n) > 0);
     }
     else { // Triangle is considered ceiling
-        return false; // Should do in our conditions
+        impact.x = position.x;
+        impact.y = position.y;
+        impact.z = (d - impact.x * n.x - impact.y * n.y) / n.z;
+        float distance_to_plane = position.z - impact.z;
+        if (distance_to_plane < -margin || distance_to_plane > 0) return false;
+        normal = n;
+        return (cross(p2 - p1, impact - p1).z < 0 && cross(p3 - p2, impact - p2).z < 0 && cross(p1 - p3, impact - p3).z < 0);
     }
     
 }
@@ -70,7 +76,7 @@ float map_structure::get_z(vcl::vec3 position) {
     float nearest = -1000.f, z;
 
     for (triangle* triptr : grid(i, j))
-        if (triptr->n.z > 0.1f) {
+        if (triptr->n.z > 0.3f) {
             d1 = side(position, triptr->p1, triptr->p2);
             d2 = side(position, triptr->p2, triptr->p3);
             d3 = side(position, triptr->p3, triptr->p1);
@@ -187,7 +193,7 @@ bool map_structure::ground_collision(vcl::vec3 position, vcl::vec3& impact, vcl:
     if (i >= grid_size || i < 0 || j >= grid_size || j < 0)
         return false;
     for (triangle* triptr : grid(i, j))
-        if (triptr->n.z > 0.01f && triptr->collision(position, impact, normal))
+        if (triptr->n.z > 0.3f && triptr->collision(position, impact, normal))
             return true;
     return false; // impact may have been modified anyway in the process
 }
@@ -199,7 +205,19 @@ bool map_structure::wall_collision(vcl::vec3 position, vcl::vec3& impact, vcl::v
     if (i >= grid_size || i < 0 || j >= grid_size || j < 0)
         return false;
     for (triangle* triptr : grid(i, j))
-        if (abs(triptr->n.z < 0.01f) && triptr->collision(position, impact, normal, margin))
+        if (triptr->n.z <= 0.3f && triptr->n.z > -0.01f && triptr->collision(position, impact, normal, margin))
+            return true;
+    return false; // impact may have been modified anyway in the process
+}
+
+bool map_structure::ceiling_collision(vcl::vec3 position, vcl::vec3& impact, vcl::vec3& normal, float margin)
+{
+    int i = static_cast<int>((position.x - minx) / (maxx - minx) * grid_size);
+    int j = static_cast<int>((position.y - miny) / (maxy - miny) * grid_size);
+    if (i >= grid_size || i < 0 || j >= grid_size || j < 0)
+        return false;
+    for (triangle* triptr : grid(i, j))
+        if (triptr->n.z <= -0.01f && triptr->collision(position, impact, normal, margin))
             return true;
     return false; // impact may have been modified anyway in the process
 }
@@ -310,7 +328,6 @@ void map_structure::loadOBJ(const char* path)
             unsigned int vIndex[3], uvIndex[3], nIndex[3];
             int matches = fscanf(file, "%d/%d/%d %d/%d/%d %d/%d/%d\n", &vIndex[0], &uvIndex[0], &nIndex[0], &vIndex[1], &uvIndex[1], &nIndex[1], &vIndex[2], &uvIndex[2], &nIndex[2]);
             assert(matches == 9);
-            
 
             map_triangle.push_back(triangle(
                 vec3{ temp_vertices[vIndex[0] - 1].z,temp_vertices[vIndex[0] - 1].x,temp_vertices[vIndex[0] - 1].y },
@@ -318,6 +335,14 @@ void map_structure::loadOBJ(const char* path)
                 vec3{ temp_vertices[vIndex[2] - 1].z,temp_vertices[vIndex[2] - 1].x,temp_vertices[vIndex[2] - 1].y },
                 vec3{ -temp_normals[nIndex[0] - 1].z,-temp_normals[nIndex[0] - 1].x,-temp_normals[nIndex[0] - 1].y }
             ));
+            if (temp_normals[nIndex[0] - 1].y < 0.01f && temp_normals[nIndex[0] - 1].y > -0.01f) { // add mirror wall
+                map_triangle.push_back(triangle(
+                    vec3{ temp_vertices[vIndex[0] - 1].z,temp_vertices[vIndex[0] - 1].x,temp_vertices[vIndex[0] - 1].y },
+                    vec3{ temp_vertices[vIndex[2] - 1].z,temp_vertices[vIndex[2] - 1].x,temp_vertices[vIndex[2] - 1].y },
+                    vec3{ temp_vertices[vIndex[1] - 1].z,temp_vertices[vIndex[1] - 1].x,temp_vertices[vIndex[1] - 1].y },
+                    vec3{ temp_normals[nIndex[0] - 1].z,temp_normals[nIndex[0] - 1].x,temp_normals[nIndex[0] - 1].y }
+                ));
+            }
             tri.position.push_back({ temp_vertices[vIndex[0] - 1].z,temp_vertices[vIndex[0] - 1].x,temp_vertices[vIndex[0] - 1].y });
             tri.position.push_back({ temp_vertices[vIndex[1] - 1].z,temp_vertices[vIndex[1] - 1].x,temp_vertices[vIndex[1] - 1].y });
             tri.position.push_back({ temp_vertices[vIndex[2] - 1].z,temp_vertices[vIndex[2] - 1].x,temp_vertices[vIndex[2] - 1].y });

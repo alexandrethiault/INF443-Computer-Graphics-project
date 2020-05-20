@@ -57,8 +57,8 @@ void bubbles_structure::simulate() {
     if (active && !bubble.squishing && !bubble.unsquishing) {
         const float m = 0.01f; // Particle mass
         const float f = 0.015f; // Friction
-        const vec3 F = m * g;
-        bubble.v = bubble.v + dt * (m * g - f * bubble.v) / m;
+        const vec3 F = m * g - f * bubble.v;
+        bubble.v = bubble.v + dt * F / m;
         bubble.p = bubble.p + dt * bubble.v;
     }
 

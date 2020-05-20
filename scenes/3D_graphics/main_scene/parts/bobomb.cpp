@@ -409,7 +409,13 @@ void pink_bombomb_structure::move(float t, float dt) {
 
     vec3 impact, normal;
 
-    if (map->ground_collision(center + rel_position, impact, normal)) {
+    if (map->ceiling_collision(center + rel_position + centre_corps, impact, normal, cote_corps / 2.f)) {
+        //rel_position -= dt * vec3{ hspeed * std::cos(angle), hspeed * std::sin(angle), vspeed };
+        rel_position = impact + normal * cote_corps / 2.f - (center + centre_corps);
+        vspeed = -0.025f;
+    }
+    else if (map->ground_collision(center + rel_position, impact, normal) &&
+            ((center+rel_position+centre_corps).z - impact.z >= 0 || vspeed < -1.f)) {
         rel_position = impact - center;
         vspeed = 0.f;
     }
@@ -418,8 +424,12 @@ void pink_bombomb_structure::move(float t, float dt) {
         vspeed = 0.f;
     }
     else {
-        vspeed += -2.5f * dt;
-        rel_position.z += vspeed * dt;
+        const float g = -2.5f;
+        const float m = 0.01f;
+        const float f = 0.004f;
+        const float F = m * g - f * vspeed;
+        vspeed += dt * F / m;
+        rel_position.z += dt * vspeed;
     }
 
     if (map->wall_collision(center + rel_position + centre_corps, impact, normal, cote_corps / 2.f))
@@ -452,9 +462,9 @@ void pink_bombomb_structure::keyboard_input(bool Z, bool W, bool D, bool S, bool
         w = 8 * PI;
         ampl = .4f;
     }
-    if(A || Q)
+    if (A || Q)
         angular_v = 3 * max_angular_velocity;
-    if(D)
+    if (D)
         angular_v = - 3 * max_angular_velocity;
     if (S) {
         hspeed = -2 * max_speed;
