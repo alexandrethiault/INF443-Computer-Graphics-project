@@ -1,6 +1,7 @@
 # Ignorer les produits de compilation
 .vs/
 .vscode/
+CMakeSettings.json
 imgui.ini
 out/build/x64-Debug/*
 
