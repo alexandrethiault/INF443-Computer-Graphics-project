@@ -148,7 +148,7 @@ mesh mesh_eyes(float radius, float angle, float height) {
     return shape;
 }
 
-void bobomb_structure::init(const vec3& _center, map_structure* _map, bridge_structure* _bridge)
+void bobomb_structure::init(const vec3& _center, map_structure* _map, bridge_structure* _bridge, std::string body_file)
 {
     if (radius_boulon) {
         std::cout << "Tentative de re-initialiser une bobomb deja initialisee." << std::endl;
@@ -169,10 +169,10 @@ void bobomb_structure::init(const vec3& _center, map_structure* _map, bridge_str
     radius_reach = scaling * cote_corps * 20.0f;
 
     max_angular_velocity = PI / 4;
-    max_speed = cote_corps / 3.0f;
+    max_speed = 7.f * cote_corps / 3.0f;
     center = original_pos = _center;
     rel_position = rush_speed = { 0,0,0 };
-    angular_v = hspeed = vspeed = time_chasing = 0.0f;
+    angular_v = hspeed = vspeed = time_chasing = w = ampl = 0.0f;
     angle = 0.0f;
     rushing = exploding = falling = hide = false;
 
@@ -200,7 +200,7 @@ void bobomb_structure::init(const vec3& _center, map_structure* _map, bridge_str
 
     corps.uniform.transform.translation.z = height_pied;
 
-    texture_corps = create_texture_gpu(image_load_png(bobomb_dir + "corps.png"));
+    texture_corps = create_texture_gpu(image_load_png(bobomb_dir + body_file));
     texture_yeux = create_texture_gpu(image_load_png(bobomb_dir + "yeux.png"));
     couleur_pied = { 1.f, 0.8f, 0.f };
     couleur_boulon = { .8f, .8f, .8f };
@@ -267,14 +267,11 @@ void bobomb_structure::move(const vcl::vec3& char_pos, float t, float dt)
 
     if (!rushing && !exploding && hide) return; // Don't hide the bomb if it's about to explode
 
-    float w = .0f;
-    float ampl = .0f;
-
     if (rushing) { // Rush towards Mario
         w = 8 * PI;
         ampl = .4f;
         time_chasing += dt;
-        rush_speed = normalize(char_pos - (center + rel_position) ) * 7 * max_speed;
+        rush_speed = normalize(char_pos - (center + rel_position) ) * max_speed;
         float da = atan2(char_pos.y - (center + rel_position).y, char_pos.x - (center + rel_position).x) - angle;
         angle += da;
         rel_position += dt* vec3{ rush_speed.x, rush_speed.y, 0 };
@@ -318,7 +315,7 @@ void bobomb_structure::move(const vcl::vec3& char_pos, float t, float dt)
         }
         angle += angular_v * dt;
         if (distribb(generatorb) < 0.05f) {
-            if (distribb(generatorb) * 4 < 3) hspeed = max_speed;
+            if (distribb(generatorb) * 4 < 3) hspeed = max_speed / 7.f;
             else hspeed = 0;
         }
         rel_position += dt * vec3{ hspeed * cos(angle), hspeed * sin(angle), 0 };
@@ -384,7 +381,7 @@ void bobombs_structure::setup(map_structure* _map, bridge_structure* _bridge) {
     vec3 ipos;
     for (int i = 0; i < n; i++) {
         bobombs_pos >> ipos.x >> ipos.y >> ipos.z;
-        bobombs[i].init(ipos, _map, _bridge);
+        bobombs[i].init(ipos, _map, _bridge, "corps.png");
     }
 }
 
@@ -401,6 +398,74 @@ void bobombs_structure::draw_nobillboards(std::map<std::string, GLuint>& shaders
 void bobombs_structure::draw_billboards(std::map<std::string, GLuint>& shaders, scene_structure& scene, bool bb, bool wf) {
     for (auto i = bobombs.begin(); i != bobombs.end(); i++)
         i->draw_billboards(shaders, scene, bb, wf);
+}
+
+void pink_bombomb_structure::move(float t, float dt) {
+
+    if (dt > 0.1f) dt = 0.1f;
+
+    angle += angular_v * dt;
+    rel_position += dt * vec3{ hspeed * std::cos(angle), hspeed * std::sin(angle), vspeed };
+
+    vec3 impact, normal;
+
+    if (map->ground_collision(center + rel_position, impact, normal)) {
+        rel_position = impact - center;
+        vspeed = 0.f;
+    }
+    else if (bridge->ground_collision(center + rel_position, impact, normal)) {
+        rel_position = impact - center;
+        vspeed = 0.f;
+    }
+    else {
+        vspeed += -2.5f * dt;
+        rel_position.z += vspeed * dt;
+    }
+
+    if (map->wall_collision(center + rel_position + centre_corps, impact, normal, cote_corps / 2.f))
+        rel_position = impact + normal * cote_corps / 1.999f - (center + centre_corps);
+    if (map->wall_collision(center + rel_position + centre_corps, impact, normal, cote_corps / 2.f))
+        rel_position = impact + normal * cote_corps / 2.f - (center + centre_corps);
+
+    mat3 R_pied_droit = rotation_from_axis_angle_mat3({ 1, 0, 0 }, ampl * std::sin(w * t));
+    mat3 R_pied_gauche = rotation_from_axis_angle_mat3({ 1, 0, 0 }, ampl * std::sin(w * t - PI));
+
+    hierarchy["Pied_Droit"].transform.rotation = R_pied_droit;
+    hierarchy["Pied_Gauche"].transform.rotation = R_pied_gauche;
+    hierarchy["Global"].transform.rotation = rotation_from_axis_angle_mat3({ 0,0,1 }, angle + PI / 2);
+    hierarchy["Super_Global"].transform.translation = center + rel_position;
+    hierarchy.update_local_to_global_coordinates();
+}
+
+void pink_bombomb_structure::keyboard_input(bool Z, bool W, bool D, bool S, bool A, bool Q, bool SPACE) {
+
+    hspeed = 0.f;
+    angular_v = 0.f;
+    w = 0.f;
+    ampl = .0f;
+
+    if (!Z && !W && !D && !S && !A && !Q && !SPACE)
+        return;
+
+    if (Z || W) {
+        hspeed = 2 * max_speed;
+        w = 8 * PI;
+        ampl = .4f;
+    }
+    if(A || Q)
+        angular_v = 3 * max_angular_velocity;
+    if(D)
+        angular_v = - 3 * max_angular_velocity;
+    if (S) {
+        hspeed = -2 * max_speed;
+        w = 8 * PI;
+        ampl = .4f;
+    }
+    if (SPACE) {
+        vspeed = 3 * max_speed;
+        w = 16 * PI;
+        ampl = .1f;
+    }
 }
 
 #endif

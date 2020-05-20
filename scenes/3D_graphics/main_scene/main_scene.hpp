@@ -42,6 +42,7 @@ struct scene_model : scene_base
     bubbles_structure bubbles;
     flight_model flight;
     bobombs_structure bobombs;
+    pink_bombomb_structure pbobomb;
 
     gui_scene_structure gui_scene;
     vcl::timer_interval timer;
