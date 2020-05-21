@@ -15,7 +15,7 @@ float triangle::ground_collision_depth = 0.3f;
 float triangle::ground_collision_stick = 0.01f;
 float triangle::wall_collision_depth = 0.02f;
 
-shading_mesh shading = { 0.7f,0.3f,0 };
+shading_mesh shading = { 0.7f,0.5f,0 };
 
 triangle::triangle(vec3& p1, vec3& p2, vec3& p3, vec3& fakenormal)
 {

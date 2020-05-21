@@ -22,6 +22,7 @@ struct bobomb_structure
 
     void init(const vcl::vec3& _center, map_structure* _map, bridge_structure* _bridge, std::string body_file);
     void draw_nobillboards(std::map<std::string, GLuint>& shaders, scene_structure& scene, bool surf, bool wf);
+    void draw_part_nogl(std::string name, std::map<std::string, GLuint>& shaders, scene_structure& scene, bool surfbb, bool wf);
     void draw_billboards(std::map<std::string, GLuint>& shaders, scene_structure& scene, bool bb, bool wf);
     void move(const vcl::vec3& char_pos, float t, float dt);
     vcl::vec3 get_position();

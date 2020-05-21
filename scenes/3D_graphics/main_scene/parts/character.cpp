@@ -65,38 +65,9 @@ void character_structure::init(const vec3& center)
     hierarchy.add(mario[find_mesh_index("Broche")], "Broche", "Bicorne");
     hierarchy.add(mario[find_mesh_index("Bouton_Bicorne")], "Bouton_Bicorne", "Bicorne");
     hierarchy.add(mario[find_mesh_index("Moustache")], "Moustache", "Skin");
-}
 
-void character_structure::draw(std::map<std::string, GLuint>& shaders, scene_structure& scene, bool surf, bool wf)
-{
-    // dessiner toutes les parties qui ne sont pas des billboards
-    // copi� coll� de ce que j'ai fait pour le chomp
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); // avoids sampling artifacts
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE); // avoids sampling artifacts
-    
-    for (int i = 0; i < (int)part_name.size(); i++) {
-        if (mario_textures[texture_indices[i]] == -1) {
-            glBindTexture(GL_TEXTURE_2D, scene.texture_white);
-            hierarchy[part_name[i]].element.uniform.color = mario_mtl[texture_indices[i]].Kd;
-        }
-        else {
-            glBindTexture(GL_TEXTURE_2D, mario_textures[texture_indices[i]]);
-        }
-        hierarchy[part_name[i]].global_transform.scaling = scale*0.01f;
-        if (surf) draw_hierarchy_element(hierarchy[part_name[i]], scene.camera, shaders["mesh"]);
-        if (wf) draw_hierarchy_element(hierarchy[part_name[i]], scene.camera, shaders["wireframe"]);
-    }
-
-    glBindTexture(GL_TEXTURE_2D, scene.texture_white);
-}
-
-void character_structure::move(float t, float dt)
-{
-    if (dt > 0.1f) dt = 0.1f;
-
-    mat3 RL_1 = rotation_from_axis_angle_mat3({ 1, 0, 0}, - 8.f * PI / 180.f);
-    mat3 RL_2 = rotation_from_axis_angle_mat3({ 0, 0, 1 }, - 10.f * PI / 180.f);
+    mat3 RL_1 = rotation_from_axis_angle_mat3({ 1, 0, 0 }, -8.f * PI / 180.f);
+    mat3 RL_2 = rotation_from_axis_angle_mat3({ 0, 0, 1 }, -10.f * PI / 180.f);
     mat3 RL_3 = rotation_from_axis_angle_mat3({ 0, 1, 0 }, 10.f * PI / 180.f);
     mat3 LL_1 = rotation_from_axis_angle_mat3({ 1, 0, 0 }, 8.f * PI / 180.f);
     mat3 LL_2 = rotation_from_axis_angle_mat3({ 0, 0, 1 }, 10.f * PI / 180.f);
@@ -126,6 +97,35 @@ void character_structure::move(float t, float dt)
     hierarchy["Skin"].transform.translation = scale * (position_centres["Skin"] - T * position_centres["Skin"]);
 
     hierarchy.update_local_to_global_coordinates();
+}
+
+void character_structure::draw(std::map<std::string, GLuint>& shaders, scene_structure& scene, bool surf, bool wf)
+{
+    // dessiner toutes les parties qui ne sont pas des billboards
+    // copi� coll� de ce que j'ai fait pour le chomp
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); // avoids sampling artifacts
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE); // avoids sampling artifacts
+    
+    for (int i = 0; i < (int)part_name.size(); i++) {
+        if (mario_textures[texture_indices[i]] == -1) {
+            glBindTexture(GL_TEXTURE_2D, scene.texture_white);
+            hierarchy[part_name[i]].element.uniform.color = mario_mtl[texture_indices[i]].Kd;
+        }
+        else {
+            glBindTexture(GL_TEXTURE_2D, mario_textures[texture_indices[i]]);
+        }
+        hierarchy[part_name[i]].global_transform.scaling = scale*0.01f;
+        if (surf) draw_hierarchy_element(hierarchy[part_name[i]], scene.camera, shaders["mesh"]);
+        if (wf) draw_hierarchy_element(hierarchy[part_name[i]], scene.camera, shaders["wireframe"]);
+    }
+
+    glBindTexture(GL_TEXTURE_2D, scene.texture_white);
+}
+
+void character_structure::move(float t, float dt)
+{
+    if (dt > 0.1f) dt = 0.1f;
 }
 
 vec3 character_structure::get_translation()

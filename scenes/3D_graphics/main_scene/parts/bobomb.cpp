@@ -164,7 +164,7 @@ void bobomb_structure::init(const vec3& _center, map_structure* _map, bridge_str
     cote_corps = scaling * 0.3f;
     height_pied = scaling * 0.060f;
     height_yeux = scaling * 0.1f;
-    temps_explode = 50.f;
+    temps_explode = 5.f;
 
     radius_reach = scaling * cote_corps * 20.0f;
 
@@ -220,6 +220,11 @@ void bobomb_structure::init(const vec3& _center, map_structure* _map, bridge_str
     hierarchy["Boulon"].element.uniform.color = couleur_boulon;
 }
 
+void bobomb_structure::draw_part_nogl(std::string name, std::map<std::string, GLuint>& shaders, scene_structure& scene, bool surfbb, bool wf) {
+    if (surfbb) draw_hierarchy_element(hierarchy[name], scene.camera, shaders["mesh"]);
+    if (wf) draw_hierarchy_element(hierarchy[name], scene.camera, shaders["wireframe"]);
+}
+
 void bobomb_structure::draw_nobillboards(std::map<std::string, GLuint>& shaders, scene_structure& scene, bool surf, bool wf)
 {
     if (!rushing && !exploding && hide) return;
@@ -227,14 +232,15 @@ void bobomb_structure::draw_nobillboards(std::map<std::string, GLuint>& shaders,
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); // avoids sampling artifacts
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-    if (surf) draw_hierarchy_element(hierarchy["Pied_Droit"], scene.camera, shaders["mesh"]);
-    if (wf) draw_hierarchy_element(hierarchy["Pied_Droit"], scene.camera, shaders["wireframe"]);
-    if (surf) draw_hierarchy_element(hierarchy["Pied_Gauche"], scene.camera, shaders["mesh"]);
-    if (wf) draw_hierarchy_element(hierarchy["Pied_Gauche"], scene.camera, shaders["wireframe"]);
-    if (surf) draw_hierarchy_element(hierarchy["Boulon"], scene.camera, shaders["mesh"]);
-    if (wf) draw_hierarchy_element(hierarchy["Boulon"], scene.camera, shaders["wireframe"]);
+    draw_part_nogl("Boulon", shaders, scene, surf, wf);
+    draw_part_nogl("Pied_Gauche", shaders, scene, surf, wf);
+    draw_part_nogl("Pied_Droit", shaders, scene, surf, wf);
 
     glBindTexture(GL_TEXTURE_2D, scene.texture_white);
+}
+
+bool cmpbillboard(vec3& u, vec3& v, vec3& cam_pos) {
+    return (norm(u - cam_pos) > norm(v - cam_pos));
 }
 
 void bobomb_structure::draw_billboards(std::map<std::string, GLuint>& shaders, scene_structure& scene, bool bb, bool wf)
@@ -248,12 +254,12 @@ void bobomb_structure::draw_billboards(std::map<std::string, GLuint>& shaders, s
     hierarchy["Corps"].transform.translation = centre_corps - R * centre_corps;
 
     glBindTexture(GL_TEXTURE_2D, texture_corps);
-    if (bb) draw_hierarchy_element(hierarchy["Corps"], scene.camera, shaders["mesh"]);
-    if (wf) draw_hierarchy_element(hierarchy["Corps"], scene.camera, shaders["wireframe"]);
+    draw_part_nogl("Corps", shaders, scene, bb, wf);
 
-    glBindTexture(GL_TEXTURE_2D, texture_yeux);
-    if (bb) draw_hierarchy_element(hierarchy["Yeux"], scene.camera, shaders["mesh"]);
-    if (wf) draw_hierarchy_element(hierarchy["Yeux"], scene.camera, shaders["wireframe"]);
+    if (!cmpbillboard(center + rel_position + vec3{ cote_corps/2.f * std::cos(angle), cote_corps / 2.f * std::sin(angle), height_yeux / 2.f + cote_corps / 2.f }, center + rel_position + centre_corps, scene.camera.camera_position())) {
+        glBindTexture(GL_TEXTURE_2D, texture_yeux);
+        draw_part_nogl("Yeux", shaders, scene, bb, wf);
+    }
 }
 
 void bobomb_structure::move(const vcl::vec3& char_pos, float t, float dt)
@@ -391,13 +397,43 @@ void bobombs_structure::move(const vcl::vec3& char_pos, float t, float dt) {
 }
 
 void bobombs_structure::draw_nobillboards(std::map<std::string, GLuint>& shaders, scene_structure& scene, bool surf, bool wf) {
-    for (auto i = bobombs.begin(); i != bobombs.end(); i++)
-        i->draw_nobillboards(shaders, scene, surf, wf);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); // avoids sampling artifacts
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    for (auto i = bobombs.begin(); i != bobombs.end(); i++) {
+        if (!i->rushing && !i->exploding && i->hide) continue;
+        
+        i->draw_part_nogl("Boulon", shaders, scene, surf, wf);
+        i->draw_part_nogl("Pied_Gauche", shaders, scene, surf, wf);
+        i->draw_part_nogl("Pied_Droit", shaders, scene, surf, wf);
+    }
+
+    glBindTexture(GL_TEXTURE_2D, scene.texture_white);
 }
 
 void bobombs_structure::draw_billboards(std::map<std::string, GLuint>& shaders, scene_structure& scene, bool bb, bool wf) {
-    for (auto i = bobombs.begin(); i != bobombs.end(); i++)
-        i->draw_billboards(shaders, scene, bb, wf);
+
+    mat3 R = scene.camera.orientation * rotation_from_axis_angle_mat3({ 1, 0, 0 }, -PI / 2.);
+
+    glBindTexture(GL_TEXTURE_2D, bobombs[0].texture_corps);
+
+    for (auto i = bobombs.begin(); i != bobombs.end(); i++) {
+        if (!i->rushing && !i->exploding && i->hide) continue;
+
+        i->hierarchy["Corps"].transform.rotation = R;
+        i->hierarchy["Corps"].transform.translation = i->centre_corps - R * i->centre_corps;
+        i->draw_part_nogl("Corps", shaders, scene, bb, wf);
+    }
+
+    glBindTexture(GL_TEXTURE_2D, bobombs[0].texture_yeux);
+
+    for (auto i = bobombs.begin(); i != bobombs.end(); i++) {
+        if (!i->rushing && !i->exploding && i->hide) continue;
+
+        if (!cmpbillboard(i->center + i->rel_position + vec3{ i->cote_corps / 2.f * std::cos(i->angle), i->cote_corps / 2.f * std::sin(i->angle), i->height_yeux / 2.f + i->cote_corps / 2.f }, i->center + i->rel_position + i->centre_corps, scene.camera.camera_position()))
+            i->draw_part_nogl("Yeux", shaders, scene, bb, wf);
+    }
 }
 
 void pink_bombomb_structure::move(float t, float dt) {
@@ -432,10 +468,12 @@ void pink_bombomb_structure::move(float t, float dt) {
         rel_position.z += dt * vspeed;
     }
 
-    if (map->wall_collision(center + rel_position + centre_corps, impact, normal, cote_corps / 2.f))
-        rel_position = impact + normal * cote_corps / 1.999f - (center + centre_corps);
-    if (map->wall_collision(center + rel_position + centre_corps, impact, normal, cote_corps / 2.f))
-        rel_position = impact + normal * cote_corps / 2.f - (center + centre_corps);
+    vec3 pied = vec3{ 0, 0, height_pied };
+
+    if (map->wall_collision(center + rel_position + pied, impact, normal, cote_corps / 2.f))
+        rel_position = impact + normal * cote_corps / 1.999f - (center + pied);
+    if (map->wall_collision(center + rel_position + vec3{ 0, 0, height_pied }, impact, normal, cote_corps / 2.f))
+        rel_position = impact + normal * cote_corps / 2.f - (center + pied);
 
     mat3 R_pied_droit = rotation_from_axis_angle_mat3({ 1, 0, 0 }, ampl * std::sin(w * t));
     mat3 R_pied_gauche = rotation_from_axis_angle_mat3({ 1, 0, 0 }, ampl * std::sin(w * t - PI));
@@ -453,9 +491,6 @@ void pink_bombomb_structure::keyboard_input(bool Z, bool W, bool D, bool S, bool
     angular_v = 0.f;
     w = 0.f;
     ampl = .0f;
-
-    if (!Z && !W && !D && !S && !A && !Q && !SPACE)
-        return;
 
     if (Z || W) {
         hspeed = 2 * max_speed;
