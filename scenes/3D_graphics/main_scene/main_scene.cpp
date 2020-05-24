@@ -30,9 +30,7 @@ void scene_model::setup_data(std::map<std::string,GLuint>& shaders, scene_struct
 
     bubbles.setup(&map);
 
-    pbobomb.init({ -2.045240f, -2.631043f, 3.087018f }, &map, &bridge, "pink_corps.png");
-
-    bobombs.setup(&map, &bridge); // Pointers used for collisions
+    bobombs.setup(&map, &bridge, { -2.045240f, -2.631043f, 3.087018f }); // Pointers used for collisions
 
     flight.setup_flight(&character);
 
@@ -50,24 +48,25 @@ void scene_model::frame_draw(std::map<std::string, GLuint>& shaders, scene_struc
 
     chomp.move(flight.p, t, ((t < last_t) ? timer.t_max - timer.t_min : 0) + t - last_t);
     character.move(t, ((t < last_t) ? timer.t_max - timer.t_min : 0) + t - last_t);
-    bobombs.move(flight.p, t, ((t < last_t) ? timer.t_max - timer.t_min : 0) + t - last_t);
-    pbobomb.move(t, ((t < last_t) ? timer.t_max - timer.t_min : 0) + t - last_t);
+    bobombs.move(bobombs.pbobomb.get_position(), t, ((t < last_t) ? timer.t_max - timer.t_min : 0) + t - last_t);
     star.move(t);
     bridge.move(t, ((t < last_t) ? timer.t_max - timer.t_min : 0) + t - last_t);
-    bubbles.simulate();
+    bubbles.simulate(bobombs.pbobomb.get_position());
     flight.simulate(); // Moves the character to the current flight position
 
-    if (gui_scene.lock_on_mario) scene.camera.translation = -pbobomb.get_position(); // camera frame center = Mario
+    if (gui_scene.lock_on_pbobomb) scene.camera.translation = -bobombs.pbobomb.get_position(); // camera frame center = Mario
     if (gui_scene.auto_orientation) {
-        scene.camera.scale = 1;
-        scene.camera.orientation = rotation_to_vector_mat3({ -flight.dp.z,-flight.dp.x,flight.dp.y });
+        scene.camera.scale = 2;
+        float newtheta = (-bobombs.pbobomb.angle + 1.570796f) + scene.camera.spherical_coordinates.x;
+        if (newtheta > dt * 2.f) newtheta = dt * 2.f;
+        if (newtheta <-dt * 2.f) newtheta =-dt * 2.f;
+        scene.camera.apply_rotation(0, 0, newtheta, 1.2f - scene.camera.spherical_coordinates.y);
     }
 
     glEnable(GL_POLYGON_OFFSET_FILL); // avoids z-fighting when displaying wireframe
     chomp.draw_nobillboards(shaders, scene, gui_scene.surface, gui_scene.wireframe);
     map.draw_nobillboards(shaders, scene, gui_scene.surface, gui_scene.wireframe); // Including sky and 5 posts
     bobombs.draw_nobillboards(shaders, scene, gui_scene.surface, gui_scene.wireframe);
-    pbobomb.draw_nobillboards(shaders, scene, gui_scene.surface, gui_scene.wireframe);
     star.draw_nobillboards(shaders, scene, gui_scene.surface, gui_scene.wireframe); // 2 stars
     flight.draw_path(shaders, scene, gui_scene.display_keyframe, gui_scene.display_polygon);
     bridge.draw_bridge(shaders, scene, gui_scene.surface, gui_scene.wireframe);
@@ -81,7 +80,6 @@ void scene_model::frame_draw(std::map<std::string, GLuint>& shaders, scene_struc
     glDepthMask(false);
     // étoiles puis grille du chomp puis chomp (chaine) puis reste de la map (arbres, pièces)
     bobombs.draw_billboards(shaders, scene, gui_scene.surface, gui_scene.wireframe);
-    pbobomb.draw_billboards(shaders, scene, gui_scene.surface, gui_scene.wireframe);
     star.draw_billboards(shaders, scene, gui_scene.surface, gui_scene.wireframe); // Star eyes
     chomp.draw_billboards(shaders, scene, gui_scene.billboards, gui_scene.wireframe); // Eyes and chains
     map.draw_billboards(shaders, scene, gui_scene.billboards, gui_scene.wireframe, ((int)(16 * t)) % 4); // 2 types of grids and 17 trees
@@ -109,7 +107,7 @@ void scene_model::keyboard_input(scene_structure& scene, GLFWwindow* window, int
     if (key == GLFW_KEY_P && action == GLFW_PRESS)
         std::cout << scene.frame_camera.uniform.transform.translation << std::endl;
 
-    pbobomb.keyboard_input(glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS, glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS, glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS, glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS, glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS, glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS, glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS);
+    bobombs.pbobomb.keyboard_input(glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS, glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS, glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS, glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS, glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS, glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS, glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS);
 }
 
 void scene_model::set_gui(std::map<std::string, GLuint>& shaders, scene_structure& scene)
@@ -124,7 +122,7 @@ void scene_model::set_gui(std::map<std::string, GLuint>& shaders, scene_structur
     ImGui::SliderFloat("Time scale", &timer.scale, 0.01f, 3.0f);
 
     ImGui::Checkbox("Mario", &gui_scene.mario); ImGui::SameLine();
-    ImGui::Checkbox("Lock camera on Mario", &gui_scene.lock_on_mario); ImGui::SameLine();
+    ImGui::Checkbox("Lock camera on pink bobomb", &gui_scene.lock_on_pbobomb); ImGui::SameLine();
     ImGui::Checkbox("Third person camera", &gui_scene.auto_orientation);
     ImGui::Checkbox("Keyframes", &gui_scene.display_keyframe); ImGui::SameLine();
     ImGui::Checkbox("Polygon", &gui_scene.display_polygon); ImGui::SameLine();

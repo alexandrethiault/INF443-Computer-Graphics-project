@@ -7,43 +7,56 @@
 
 #ifdef MAIN_SCENE
 
+struct bobombs_structure;
+
 struct bobomb_structure
 {
+    bool is_pink = false;
     bool rushing = false, exploding = false, falling = false, hide = false;
-    float w, ampl;
+    float w = 0.f, ampl = 0.f;
+    
+    float angle = 0.f, angular_v = 0.f,  hspeed = 0.f, vspeed = 0.f, time_chasing = 0.f;
+    vcl::vec3 center, rel_position, rush_speed, original_pos;
+
+    // shared parameters, copied for each bobomb because it's cheap and the code will be clearer
     float radius_boulon = 0.f, height_boulon = 0.f, cote_corps = 0.f, height_pied = 0.f, height_yeux = 0.f, radius_reach = 0.f, scaling = 0.f;
-    float angle = 0.f, angular_v = 0.f, max_angular_velocity = 0.f, hspeed = 0.f, vspeed = 0.f, max_speed = 0.f, time_chasing = 0.f, temps_explode = 0.f;
-    vcl::vec3 center, centre_corps, rel_position, rush_speed, original_pos;
-    vcl::hierarchy_mesh_drawable hierarchy;
-    GLuint texture_yeux, texture_corps;
-    vcl::vec3 couleur_pied, couleur_boulon;
+    float max_angular_velocity = 0.f, max_speed = 0.f, temps_explode = 0.f;
+    vcl::vec3 centre_corps;
+    //vcl::hierarchy_mesh_drawable* hierarchy; // This one is expensive to copy so it's a pointer
     map_structure* map = nullptr;
     bridge_structure* bridge = nullptr;
 
-    void init(const vcl::vec3& _center, map_structure* _map, bridge_structure* _bridge, std::string body_file);
-    void draw_nobillboards(std::map<std::string, GLuint>& shaders, scene_structure& scene, bool surf, bool wf);
-    void draw_part_nogl(std::string name, std::map<std::string, GLuint>& shaders, scene_structure& scene, bool surfbb, bool wf);
-    void draw_billboards(std::map<std::string, GLuint>& shaders, scene_structure& scene, bool bb, bool wf);
-    void move(const vcl::vec3& char_pos, float t, float dt);
+    void init(const vcl::vec3& _center, bobombs_structure* bobombs, bool is_pink);
     vcl::vec3 get_position();
+
+    void move_black(const vcl::vec3& char_pos, float t, float dt);
+    void move_pink(float t, float dt);
+    void keyboard_input(bool Z, bool W, bool D, bool S, bool A, bool Q, bool SPACE);
 };
 
 struct bobombs_structure
 {
-    std::vector<bobomb_structure> bobombs;
+    float radius_boulon = 0.f, height_boulon = 0.f, cote_corps = 0.f, height_pied = 0.f, height_yeux = 0.f, radius_reach = 0.f, scaling = 0.f;
+    float max_angular_velocity = 0.f, max_speed = 0.f, temps_explode = 0.f;
+    vcl::vec3 centre_corps;
 
-    void setup(map_structure* _map, bridge_structure* _bridge);
+    vcl::hierarchy_mesh_drawable hierarchy;
+    GLuint texture_yeux, texture_corps, texture_corps_rose;
+    vcl::vec3 couleur_pied, couleur_boulon;
+    map_structure* map = nullptr;
+    bridge_structure* bridge = nullptr;
+
+    std::vector<bobomb_structure> bobombs;
+    bobomb_structure pbobomb;
+    float t;
+
+    void setup(map_structure* _map, bridge_structure* _bridge, vcl::vec3 pink_position);
+
+    void move(const vcl::vec3& char_pos, float t, float dt);
+
+    void draw_part_nogl(std::string name, std::map<std::string, GLuint>& shaders, scene_structure& scene, bool surfbb, bool wf);
     void draw_nobillboards(std::map<std::string, GLuint>& shaders, scene_structure& scene, bool surf, bool wf);
     void draw_billboards(std::map<std::string, GLuint>& shaders, scene_structure& scene, bool bb, bool wf);
-    void move(const vcl::vec3& char_pos, float t, float dt);
-};
-
-struct pink_bombomb_structure : bobomb_structure
-{
-    void move(float t, float dt);
-    void keyboard_input(bool Z, bool W, bool D, bool S, bool A, bool Q, bool SPACE);
 };
 
 #endif
-
-

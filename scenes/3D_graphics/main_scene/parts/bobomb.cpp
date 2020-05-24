@@ -16,6 +16,8 @@ const float PI = 3.14159f;
 std::default_random_engine generatorb;
 std::uniform_real_distribution<float> distribb(0.0, 1.0);
 
+/// GEOMETRY
+
 mesh mesh_primitive_boulon(float radius, float height, const vec3& p0)
 {
     mesh shape;
@@ -148,13 +150,10 @@ mesh mesh_eyes(float radius, float angle, float height) {
     return shape;
 }
 
-void bobomb_structure::init(const vec3& _center, map_structure* _map, bridge_structure* _bridge, std::string body_file)
-{
-    if (radius_boulon) {
-        std::cout << "Tentative de re-initialiser une bobomb deja initialisee." << std::endl;
-        return;
-    }
+// INITIALIZATION
 
+void bobombs_structure::setup(map_structure* _map, bridge_structure* _bridge, vec3 pink_position)
+{
     map = _map;
     bridge = _bridge;
 
@@ -170,11 +169,6 @@ void bobomb_structure::init(const vec3& _center, map_structure* _map, bridge_str
 
     max_angular_velocity = PI / 4;
     max_speed = 7.f * cote_corps / 3.0f;
-    center = original_pos = _center;
-    rel_position = rush_speed = { 0,0,0 };
-    angular_v = hspeed = vspeed = time_chasing = w = ampl = 0.0f;
-    angle = 0.0f;
-    rushing = exploding = falling = hide = false;
 
     mesh_drawable corps = mesh_primitive_quad({ -cote_corps / 2.f, 0, 0 }, { cote_corps / 2.f, 0, 0 }, { cote_corps / 2.f , 0, cote_corps }, { -cote_corps / 2.f , 0, cote_corps });
     mesh_drawable boulon = mesh_primitive_boulon(radius_boulon, height_boulon, { 0, 0, 0 });
@@ -189,7 +183,7 @@ void bobomb_structure::init(const vec3& _center, map_structure* _map, bridge_str
     corps.uniform.shading = { 0, 1, 0 };
 
     pied_gauche.uniform.transform.scaling = scaling * 0.013f;
-    pied_gauche.uniform.transform.rotation = rotation_from_axis_angle_mat3({0, 0, 1}, PI);
+    pied_gauche.uniform.transform.rotation = rotation_from_axis_angle_mat3({ 0, 0, 1 }, PI);
     pied_gauche.uniform.transform.translation.y = scaling * -0.05f;
 
     pied_droit.uniform.transform.scaling = pied_gauche.uniform.transform.scaling;
@@ -200,7 +194,8 @@ void bobomb_structure::init(const vec3& _center, map_structure* _map, bridge_str
 
     corps.uniform.transform.translation.z = height_pied;
 
-    texture_corps = create_texture_gpu(image_load_png(bobomb_dir + body_file));
+    texture_corps_rose = create_texture_gpu(image_load_png(bobomb_dir + "pink_corps.png"));
+    texture_corps = create_texture_gpu(image_load_png(bobomb_dir + "corps.png"));
     texture_yeux = create_texture_gpu(image_load_png(bobomb_dir + "yeux.png"));
     couleur_pied = { 1.f, 0.8f, 0.f };
     couleur_boulon = { .8f, .8f, .8f };
@@ -211,64 +206,70 @@ void bobomb_structure::init(const vec3& _center, map_structure* _map, bridge_str
     hierarchy.add(mesh_drawable{}, "Global", "Super_Global");
     hierarchy.add(corps, "Corps", "Super_Global");
     hierarchy.add(boulon, "Boulon", "Global", { 0, 0, cote_corps - height_boulon / 2.f + height_pied });
-    hierarchy.add(pied_gauche, "Pied_Gauche", "Global", { scaling * 0.070f, 0, scaling * 0.021f});
+    hierarchy.add(pied_gauche, "Pied_Gauche", "Global", { scaling * 0.070f, 0, scaling * 0.021f });
     hierarchy.add(pied_droit, "Pied_Droit", "Global", { scaling * -0.070f, 0, scaling * 0.021f });
-    hierarchy.add(yeux, "Yeux", "Global", {0, 0, height_yeux / 2.f + cote_corps / 2.f });
+    hierarchy.add(yeux, "Yeux", "Global", { 0, 0, height_yeux / 2.f + cote_corps / 2.f });
 
     hierarchy["Pied_Gauche"].element.uniform.color = couleur_pied;
     hierarchy["Pied_Droit"].element.uniform.color = couleur_pied;
     hierarchy["Boulon"].element.uniform.color = couleur_boulon;
-}
 
-void bobomb_structure::draw_part_nogl(std::string name, std::map<std::string, GLuint>& shaders, scene_structure& scene, bool surfbb, bool wf) {
-    if (surfbb) draw_hierarchy_element(hierarchy[name], scene.camera, shaders["mesh"]);
-    if (wf) draw_hierarchy_element(hierarchy[name], scene.camera, shaders["wireframe"]);
-}
-
-void bobomb_structure::draw_nobillboards(std::map<std::string, GLuint>& shaders, scene_structure& scene, bool surf, bool wf)
-{
-    if (!rushing && !exploding && hide) return;
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); // avoids sampling artifacts
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-    draw_part_nogl("Boulon", shaders, scene, surf, wf);
-    draw_part_nogl("Pied_Gauche", shaders, scene, surf, wf);
-    draw_part_nogl("Pied_Droit", shaders, scene, surf, wf);
-
-    glBindTexture(GL_TEXTURE_2D, scene.texture_white);
-}
-
-bool cmpbillboard(vec3& u, vec3& v, vec3& cam_pos) {
-    return (norm(u - cam_pos) > norm(v - cam_pos));
-}
-
-void bobomb_structure::draw_billboards(std::map<std::string, GLuint>& shaders, scene_structure& scene, bool bb, bool wf)
-{
-    if (!rushing && !exploding && hide) return;
-
-    mat3 R;
-
-    R = scene.camera.orientation * rotation_from_axis_angle_mat3({ 1, 0, 0 }, -PI / 2.);
-    hierarchy["Corps"].transform.rotation = R;
-    hierarchy["Corps"].transform.translation = centre_corps - R * centre_corps;
-
-    glBindTexture(GL_TEXTURE_2D, texture_corps);
-    draw_part_nogl("Corps", shaders, scene, bb, wf);
-
-    if (!cmpbillboard(center + rel_position + vec3{ cote_corps/2.f * std::cos(angle), cote_corps / 2.f * std::sin(angle), height_yeux / 2.f + cote_corps / 2.f }, center + rel_position + centre_corps, scene.camera.camera_position())) {
-        glBindTexture(GL_TEXTURE_2D, texture_yeux);
-        draw_part_nogl("Yeux", shaders, scene, bb, wf);
+    std::fstream bobombs_pos("scenes/shared_assets/coords/bobomb.txt");
+    int n; bobombs_pos >> n;
+    bobombs.resize(n);
+    vec3 ipos;
+    for (int i = 0; i < n; i++) {
+        bobombs_pos >> ipos.x >> ipos.y >> ipos.z;
+        bobombs[i].init(ipos, this, false);
     }
+    pbobomb.init(pink_position, this, true);
 }
 
-void bobomb_structure::move(const vcl::vec3& char_pos, float t, float dt)
+void bobomb_structure::init(const vec3& _center, bobombs_structure* bobombs, bool is_pink)
+{
+    if (radius_boulon) {
+        std::cout << "Tentative de re-initialiser une bobomb deja initialisee." << std::endl;
+        return;
+    }
+
+    map = bobombs->map;
+    bridge = bobombs->bridge;
+    //hierarchy = &(bobombs->hierarchy);
+
+    scaling = bobombs->scaling;
+    radius_boulon = bobombs->radius_boulon;
+    height_boulon = bobombs->height_boulon;
+    cote_corps = bobombs->cote_corps;
+    height_pied = bobombs->height_pied;
+    height_yeux = bobombs->height_yeux;
+    temps_explode = bobombs->temps_explode;
+    radius_reach = bobombs->radius_reach;
+    max_angular_velocity = bobombs->max_angular_velocity;
+    max_speed = bobombs->max_speed;
+    centre_corps = bobombs->centre_corps;
+
+    center = original_pos = _center;
+    rel_position = rush_speed = { 0,0,0 };
+    angular_v = hspeed = vspeed = time_chasing = w = ampl = 0.0f;
+    angle = 0.0f;
+    rushing = exploding = falling = hide = false;
+
+    this->is_pink = is_pink;
+}
+
+vcl::vec3 bobomb_structure::get_position() {
+    return center + rel_position;
+}
+
+// MOVEMENTS / INTERACTION
+
+void bobomb_structure::move_black(const vcl::vec3& char_pos, float t, float dt)
 {
     if (dt > 0.1f) dt = 0.1f;
 
     if (norm(char_pos - (center + rel_position)) >= 2.f)
         hide = true;
-    if (norm(char_pos - (center + rel_position)) < 1.9f) // légère hystérésis pour éviter des scintillement
+    if (norm(char_pos - (center + rel_position)) < 1.9f) // hysteresis to avoid flickering between hidden and visible
         hide = false;
 
     if (!rushing && !exploding && hide) return; // Don't hide the bomb if it's about to explode
@@ -289,11 +290,9 @@ void bobomb_structure::move(const vcl::vec3& char_pos, float t, float dt)
         }
     }
     else if (exploding) { // The bomb inflates before exploding
-        hierarchy["Super_Global"].transform.scaling = 1.f + .5f * time_chasing / .3f;
         time_chasing += dt;
         if (time_chasing > .3f) {
             exploding = false;
-            hierarchy["Super_Global"].transform.scaling = 1.f;
             center = original_pos;
             rel_position = { 0, 0, 0 };
         }
@@ -342,102 +341,15 @@ void bobomb_structure::move(const vcl::vec3& char_pos, float t, float dt)
         vspeed += -2.5f * dt;
         rel_position.z += vspeed * dt;
     }
-    if (map->wall_collision(center + rel_position + centre_corps, impact, normal, cote_corps / 2.f))// && dot(center + rel_position + centre_corps - cote_corps / 2.f * normal - impact, normal) < 0.f)
+    if (map->wall_collision(center + rel_position + centre_corps, impact, normal, cote_corps / 2.f))
         rel_position = impact + normal * cote_corps / 1.999f - (center + centre_corps);
-    if (map->wall_collision(center + rel_position + centre_corps, impact, normal, cote_corps / 2.f))// && dot(center + rel_position + centre_corps - cote_corps / 2.f * normal - impact, normal) < 0.f)
+    if (map->wall_collision(center + rel_position + centre_corps, impact, normal, cote_corps / 2.f))
         rel_position = impact + normal * cote_corps / 2.f - (center + centre_corps);
-    
-    
-
-    /*if ((center + rel_position).z - z_floor >= -0.1f) {
-        if (falling && (center + rel_position).z - z_floor <= 0.01f) {
-            falling = false;
-            vspeed = 0.f;
-        }
-
-        if (!falling && (center + rel_position).z - z_floor <= .1f)
-            rel_position.z = z_floor - center.z;
-        else {
-            vspeed += -2.5f * dt;
-            rel_position.z += vspeed * dt;
-            rel_position.z = std::max(rel_position.z, z_floor - center.z);
-            falling = true;
-        }
-    }*/
-
-    mat3 R_pied_droit = rotation_from_axis_angle_mat3({ 1, 0, 0 }, ampl * std::sin(w * t));
-    mat3 R_pied_gauche = rotation_from_axis_angle_mat3({ 1, 0, 0 }, ampl * std::sin(w * t - PI));
-
-    hierarchy["Pied_Droit"].transform.rotation = R_pied_droit;
-    hierarchy["Pied_Gauche"].transform.rotation = R_pied_gauche;
-    hierarchy["Global"].transform.rotation = rotation_from_axis_angle_mat3({ 0,0,1 }, angle + PI / 2);
-    hierarchy["Super_Global"].transform.translation = center + rel_position;
-    hierarchy.update_local_to_global_coordinates();
 }
 
-vcl::vec3 bobomb_structure::get_position() {
-    return center + rel_position;
-}
-
-void bobombs_structure::setup(map_structure* _map, bridge_structure* _bridge) {
-
-    std::fstream bobombs_pos("scenes/shared_assets/coords/bobomb.txt");
-    int n; bobombs_pos >> n;
-    bobombs.resize(n);
-    vec3 ipos;
-    for (int i = 0; i < n; i++) {
-        bobombs_pos >> ipos.x >> ipos.y >> ipos.z;
-        bobombs[i].init(ipos, _map, _bridge, "corps.png");
-    }
-}
-
-void bobombs_structure::move(const vcl::vec3& char_pos, float t, float dt) {
-    for (auto i = bobombs.begin(); i != bobombs.end(); i++)
-        i->move(char_pos, t, dt);
-}
-
-void bobombs_structure::draw_nobillboards(std::map<std::string, GLuint>& shaders, scene_structure& scene, bool surf, bool wf) {
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); // avoids sampling artifacts
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-    for (auto i = bobombs.begin(); i != bobombs.end(); i++) {
-        if (!i->rushing && !i->exploding && i->hide) continue;
-        
-        i->draw_part_nogl("Boulon", shaders, scene, surf, wf);
-        i->draw_part_nogl("Pied_Gauche", shaders, scene, surf, wf);
-        i->draw_part_nogl("Pied_Droit", shaders, scene, surf, wf);
-    }
-
-    glBindTexture(GL_TEXTURE_2D, scene.texture_white);
-}
-
-void bobombs_structure::draw_billboards(std::map<std::string, GLuint>& shaders, scene_structure& scene, bool bb, bool wf) {
-
-    mat3 R = scene.camera.orientation * rotation_from_axis_angle_mat3({ 1, 0, 0 }, -PI / 2.);
-
-    glBindTexture(GL_TEXTURE_2D, bobombs[0].texture_corps);
-
-    for (auto i = bobombs.begin(); i != bobombs.end(); i++) {
-        if (!i->rushing && !i->exploding && i->hide) continue;
-
-        i->hierarchy["Corps"].transform.rotation = R;
-        i->hierarchy["Corps"].transform.translation = i->centre_corps - R * i->centre_corps;
-        i->draw_part_nogl("Corps", shaders, scene, bb, wf);
-    }
-
-    glBindTexture(GL_TEXTURE_2D, bobombs[0].texture_yeux);
-
-    for (auto i = bobombs.begin(); i != bobombs.end(); i++) {
-        if (!i->rushing && !i->exploding && i->hide) continue;
-
-        if (!cmpbillboard(i->center + i->rel_position + vec3{ i->cote_corps / 2.f * std::cos(i->angle), i->cote_corps / 2.f * std::sin(i->angle), i->height_yeux / 2.f + i->cote_corps / 2.f }, i->center + i->rel_position + i->centre_corps, scene.camera.camera_position()))
-            i->draw_part_nogl("Yeux", shaders, scene, bb, wf);
-    }
-}
-
-void pink_bombomb_structure::move(float t, float dt) {
-
+void bobomb_structure::move_pink(float t, float dt)
+{
+    assert(is_pink);
     if (dt > 0.1f) dt = 0.1f;
 
     angle += angular_v * dt;
@@ -446,12 +358,11 @@ void pink_bombomb_structure::move(float t, float dt) {
     vec3 impact, normal;
 
     if (map->ceiling_collision(center + rel_position + centre_corps, impact, normal, cote_corps / 2.f)) {
-        //rel_position -= dt * vec3{ hspeed * std::cos(angle), hspeed * std::sin(angle), vspeed };
         rel_position = impact + normal * cote_corps / 2.f - (center + centre_corps);
         vspeed = -0.025f;
     }
     else if (map->ground_collision(center + rel_position, impact, normal) &&
-            ((center+rel_position+centre_corps).z - impact.z >= 0 || vspeed < -1.f)) {
+        ((center + rel_position + centre_corps).z - impact.z >= 0 || vspeed < -1.f)) {
         rel_position = impact - center;
         vspeed = 0.f;
     }
@@ -472,21 +383,12 @@ void pink_bombomb_structure::move(float t, float dt) {
 
     if (map->wall_collision(center + rel_position + pied, impact, normal, cote_corps / 2.f))
         rel_position = impact + normal * cote_corps / 1.999f - (center + pied);
-    if (map->wall_collision(center + rel_position + vec3{ 0, 0, height_pied }, impact, normal, cote_corps / 2.f))
+    if (map->wall_collision(center + rel_position + pied, impact, normal, cote_corps / 2.f))
         rel_position = impact + normal * cote_corps / 2.f - (center + pied);
-
-    mat3 R_pied_droit = rotation_from_axis_angle_mat3({ 1, 0, 0 }, ampl * std::sin(w * t));
-    mat3 R_pied_gauche = rotation_from_axis_angle_mat3({ 1, 0, 0 }, ampl * std::sin(w * t - PI));
-
-    hierarchy["Pied_Droit"].transform.rotation = R_pied_droit;
-    hierarchy["Pied_Gauche"].transform.rotation = R_pied_gauche;
-    hierarchy["Global"].transform.rotation = rotation_from_axis_angle_mat3({ 0,0,1 }, angle + PI / 2);
-    hierarchy["Super_Global"].transform.translation = center + rel_position;
-    hierarchy.update_local_to_global_coordinates();
 }
 
-void pink_bombomb_structure::keyboard_input(bool Z, bool W, bool D, bool S, bool A, bool Q, bool SPACE) {
-
+void bobomb_structure::keyboard_input(bool Z, bool W, bool D, bool S, bool A, bool Q, bool SPACE)
+{
     hspeed = 0.f;
     angular_v = 0.f;
     w = 0.f;
@@ -500,7 +402,7 @@ void pink_bombomb_structure::keyboard_input(bool Z, bool W, bool D, bool S, bool
     if (A || Q)
         angular_v = 3 * max_angular_velocity;
     if (D)
-        angular_v = - 3 * max_angular_velocity;
+        angular_v = -3 * max_angular_velocity;
     if (S) {
         hspeed = -2 * max_speed;
         w = 8 * PI;
@@ -512,5 +414,122 @@ void pink_bombomb_structure::keyboard_input(bool Z, bool W, bool D, bool S, bool
         ampl = .1f;
     }
 }
+
+void bobombs_structure::move(const vcl::vec3& char_pos, float t, float dt) {
+    this->t = t;
+    for (auto i = bobombs.begin(); i != bobombs.end(); i++)
+        i->move_black(char_pos, t, dt);
+    pbobomb.move_pink(t, dt);
+}
+
+/// DRAWING
+
+bool cmpbillboard(vec3& u, vec3& v, vec3& cam_pos) {
+    return (norm(u - cam_pos) > norm(v - cam_pos));
+}
+
+void bobombs_structure::draw_part_nogl(std::string name, std::map<std::string, GLuint>& shaders, scene_structure& scene, bool surfbb, bool wf) {
+    if (surfbb) draw_hierarchy_element(hierarchy[name], scene.camera, shaders["mesh"]);
+    if (wf) draw_hierarchy_element(hierarchy[name], scene.camera, shaders["wireframe"]);
+}
+
+void bobombs_structure::draw_nobillboards(std::map<std::string, GLuint>& shaders, scene_structure& scene, bool surf, bool wf) {
+
+    // Black bobombs
+
+    for (auto i = bobombs.begin(); i != bobombs.end(); i++) {
+        if (!i->rushing && !i->exploding && i->hide) continue;
+        
+        mat3 R_pied_droit = rotation_from_axis_angle_mat3({ 1, 0, 0 }, i->ampl * std::sin(i->w * t));
+        mat3 R_pied_gauche = rotation_from_axis_angle_mat3({ 1, 0, 0 }, i->ampl * std::sin(i->w * t - PI));
+        hierarchy["Super_Global"].transform.scaling = (i->exploding) ? 1.f + .5f * i->time_chasing / .3f : 1.f;
+        hierarchy["Pied_Droit"].transform.rotation = R_pied_droit;
+        hierarchy["Pied_Gauche"].transform.rotation = R_pied_gauche;
+        hierarchy["Global"].transform.rotation = rotation_from_axis_angle_mat3({ 0,0,1 }, i->angle + PI / 2);
+        hierarchy["Super_Global"].transform.translation = i->center + i->rel_position;
+        hierarchy.update_local_to_global_coordinates();
+
+        draw_part_nogl("Boulon", shaders, scene, surf, wf);
+        draw_part_nogl("Pied_Gauche", shaders, scene, surf, wf);
+        draw_part_nogl("Pied_Droit", shaders, scene, surf, wf);
+    }
+
+    // Pink bobomb
+
+    bobomb_structure* i = &pbobomb;
+
+    mat3 R_pied_droit = rotation_from_axis_angle_mat3({ 1, 0, 0 }, i->ampl * std::sin(i->w * t));
+    mat3 R_pied_gauche = rotation_from_axis_angle_mat3({ 1, 0, 0 }, i->ampl * std::sin(i->w * t - PI));
+
+    hierarchy["Super_Global"].transform.scaling = 1.f;
+    hierarchy["Pied_Droit"].transform.rotation = R_pied_droit;
+    hierarchy["Pied_Gauche"].transform.rotation = R_pied_gauche;
+    hierarchy["Global"].transform.rotation = rotation_from_axis_angle_mat3({ 0,0,1 }, i->angle + PI / 2);
+    hierarchy["Super_Global"].transform.translation = i->center + i->rel_position;
+    hierarchy.update_local_to_global_coordinates();
+
+    draw_part_nogl("Boulon", shaders, scene, surf, wf);
+    draw_part_nogl("Pied_Gauche", shaders, scene, surf, wf);
+    draw_part_nogl("Pied_Droit", shaders, scene, surf, wf);
+
+    glBindTexture(GL_TEXTURE_2D, scene.texture_white);
+}
+
+void bobombs_structure::draw_billboards(std::map<std::string, GLuint>& shaders, scene_structure& scene, bool bb, bool wf)
+{
+    // Black bobombs
+
+    mat3 R = scene.camera.orientation * rotation_from_axis_angle_mat3({ 1, 0, 0 }, -PI / 2.);
+
+    glBindTexture(GL_TEXTURE_2D, texture_corps);
+
+    for (auto i = bobombs.begin(); i != bobombs.end(); i++) {
+        if (!i->rushing && !i->exploding && i->hide) continue;
+
+        hierarchy["Super_Global"].transform.scaling = (i->exploding) ? 1.f + .5f * i->time_chasing / .3f : 1.f;
+        hierarchy["Global"].transform.rotation = rotation_from_axis_angle_mat3({ 0,0,1 }, i->angle + PI / 2);
+        hierarchy["Super_Global"].transform.translation = i->center + i->rel_position;
+        hierarchy["Corps"].transform.rotation = R;
+        hierarchy["Corps"].transform.translation = i->centre_corps - R * i->centre_corps;
+        hierarchy.update_local_to_global_coordinates();
+
+        draw_part_nogl("Corps", shaders, scene, bb, wf);
+    }
+
+    glBindTexture(GL_TEXTURE_2D, texture_yeux);
+
+    for (auto i = bobombs.begin(); i != bobombs.end(); i++) {
+        if (!i->rushing && !i->exploding && i->hide) continue;
+
+        hierarchy["Super_Global"].transform.scaling = (i->exploding) ? 1.f + .5f * i->time_chasing / .3f : 1.f;
+        hierarchy["Global"].transform.rotation = rotation_from_axis_angle_mat3({ 0,0,1 }, i->angle + PI / 2);
+        hierarchy["Super_Global"].transform.translation = i->center + i->rel_position;
+        hierarchy.update_local_to_global_coordinates();
+
+        if (!cmpbillboard(i->center + i->rel_position + vec3{ i->cote_corps / 2.f * std::cos(i->angle), i->cote_corps / 2.f * std::sin(i->angle), i->height_yeux / 2.f + i->cote_corps / 2.f }, i->center + i->rel_position + i->centre_corps, scene.camera.camera_position()))
+            draw_part_nogl("Yeux", shaders, scene, bb, wf);
+    }
+
+    // Pink bobomb
+
+    bobomb_structure* i = &pbobomb;
+
+    glBindTexture(GL_TEXTURE_2D, texture_corps_rose);
+
+    hierarchy["Super_Global"].transform.scaling = 1.f;
+    hierarchy["Global"].transform.rotation = rotation_from_axis_angle_mat3({ 0,0,1 }, i->angle + PI / 2);
+    hierarchy["Super_Global"].transform.translation = i->center + i->rel_position;
+    hierarchy["Corps"].transform.rotation = R;
+    hierarchy["Corps"].transform.translation = i->centre_corps - R * i->centre_corps;
+    hierarchy.update_local_to_global_coordinates();
+
+    draw_part_nogl("Corps", shaders, scene, bb, wf);
+
+    if (!cmpbillboard(i->center + i->rel_position + vec3{ i->cote_corps / 2.f * std::cos(i->angle), i->cote_corps / 2.f * std::sin(i->angle), i->height_yeux / 2.f + i->cote_corps / 2.f }, i->center + i->rel_position + i->centre_corps, scene.camera.camera_position())) {
+        glBindTexture(GL_TEXTURE_2D, texture_yeux);
+        draw_part_nogl("Yeux", shaders, scene, bb, wf);
+    }
+}
+
 
 #endif

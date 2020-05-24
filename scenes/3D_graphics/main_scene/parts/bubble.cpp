@@ -41,13 +41,15 @@ void bubbles_structure::draw_bubbles(std::map<std::string,GLuint>& shaders, scen
     }
 }
 
-void bubbles_structure::simulate() {
+void bubbles_structure::simulate(vec3& target) {
     const float dt = timerevent.update();
 
     // Emission of new particle if needed
     if (timerevent.event) {
-        vec3 p0 = vec3{ 1.3f, 5.7f, 6.0f }; // r = 0.7f
-        vec3 v0 = vec3{ distrib_bubbles(generator_bubbles)-0.5f, distrib_bubbles(generator_bubbles)-0.5f, 0.0f } * 8;
+        vec3 p0 = vec3{ 1.3f, 5.7f, 6.0f };
+        vec3 v0 = vec3{ distrib_bubbles(generator_bubbles) - 0.5f, distrib_bubbles(generator_bubbles) - 0.5f, 0.0f } *8;
+        if (norm((target - p0) * vec3 { 1, 1, 0 }) < 2) // target the pink bobomb
+            v0 = vec3{ target.x - p0.x, target.y - p0.y, 0.0 } * 1.85f;
         bubble = bubble_structure(p0, v0);
         active = true;
     }
@@ -91,8 +93,13 @@ void bubbles_structure::simulate() {
                 if (bubble.squish < 0) {
                     bubble.unsquishing = false;
                     bubble.squish = 0;
-                    bubble.v.z *= 0.75f; // loss of energy
+                    if (bubble.squish_counter == 1) bubble.v *= 0.8f; // loss of energy
                     bubble.v -= 2 * dot(normal, bubble.v) * normal; // reflexion /normal
+                    if (norm((target - bubble.p) * vec3 { 1, 1, 0 }) < 2) { // change direction to the target
+                        vec3 direction = normalize(target - bubble.p) * std::min(norm(target - bubble.p), 2*norm(bubble.v));
+                        bubble.v.x = direction.x;
+                        bubble.v.y = direction.y;
+                    }
                 }
             }
         }

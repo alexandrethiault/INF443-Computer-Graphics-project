@@ -21,7 +21,7 @@ struct gui_scene_structure
     bool mario = true;
     bool display_keyframe = false;
     bool display_polygon = false;
-    bool lock_on_mario = false;
+    bool lock_on_pbobomb = false;
     bool auto_orientation = false;
 };
 
@@ -42,7 +42,6 @@ struct scene_model : scene_base
     bubbles_structure bubbles;
     flight_model flight;
     bobombs_structure bobombs;
-    pink_bombomb_structure pbobomb;
 
     gui_scene_structure gui_scene;
     vcl::timer_interval timer;
