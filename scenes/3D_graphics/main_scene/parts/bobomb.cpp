@@ -164,6 +164,8 @@ void bobombs_structure::setup(map_structure* _map, bridge_structure* _bridge, ve
     height_pied = scaling * 0.060f;
     height_yeux = scaling * 0.1f;
     temps_explode = 5.f;
+    temps_wait = 15.f;
+    temps_fire = .5f;
 
     radius_reach = scaling * cote_corps * 20.0f;
 
@@ -197,6 +199,11 @@ void bobombs_structure::setup(map_structure* _map, bridge_structure* _bridge, ve
     texture_corps_rose = create_texture_gpu(image_load_png(bobomb_dir + "pink_corps.png"));
     texture_corps = create_texture_gpu(image_load_png(bobomb_dir + "corps.png"));
     texture_yeux = create_texture_gpu(image_load_png(bobomb_dir + "yeux.png"));
+    texture_fumee = create_texture_gpu(image_load_png(bobomb_dir + "fumee.png"));
+    textures_explosion = new GLuint[frame_explosion];
+    for(int i = 0; i < frame_explosion; i++)
+        textures_explosion[i] = create_texture_gpu(image_load_png(bobomb_dir + "explosion_" + to_string(i) + ".png"));
+
     couleur_pied = { 1.f, 0.8f, 0.f };
     couleur_boulon = { .8f, .8f, .8f };
 
@@ -213,6 +220,9 @@ void bobombs_structure::setup(map_structure* _map, bridge_structure* _bridge, ve
     hierarchy["Pied_Gauche"].element.uniform.color = couleur_pied;
     hierarchy["Pied_Droit"].element.uniform.color = couleur_pied;
     hierarchy["Boulon"].element.uniform.color = couleur_boulon;
+
+    fumee = mesh_primitive_quad({ -0.5f, 0.f, 0.5f }, { 0.5f, 0.f, 0.5f }, { 0.5f, 0.f, -0.5f }, { -0.5f, 0.f, -0.5f });
+    explosion = mesh_primitive_quad({ -1.f, 0.f, 1.f }, { 1.f, 0.f, 1.f }, { 1.f, 0.f, 0.f }, { -1.f, 0.f, 0.f });
 
     std::fstream bobombs_pos("scenes/shared_assets/coords/bobomb.txt");
     int n; bobombs_pos >> n;
@@ -243,6 +253,8 @@ void bobomb_structure::init(const vec3& _center, bobombs_structure* bobombs, boo
     height_pied = bobombs->height_pied;
     height_yeux = bobombs->height_yeux;
     temps_explode = bobombs->temps_explode;
+    temps_wait = bobombs->temps_wait;
+    temps_fire = bobombs->temps_fire;
     radius_reach = bobombs->radius_reach;
     max_angular_velocity = bobombs->max_angular_velocity;
     max_speed = bobombs->max_speed;
@@ -250,9 +262,6 @@ void bobomb_structure::init(const vec3& _center, bobombs_structure* bobombs, boo
 
     center = original_pos = _center;
     rel_position = rush_speed = { 0,0,0 };
-    angular_v = hspeed = vspeed = time_chasing = w = ampl = 0.0f;
-    angle = 0.0f;
-    rushing = exploding = falling = hide = false;
 
     this->is_pink = is_pink;
 }
@@ -266,6 +275,12 @@ vcl::vec3 bobomb_structure::get_position() {
 void bobomb_structure::move_black(const vcl::vec3& char_pos, float t, float dt)
 {
     if (dt > 0.1f) dt = 0.1f;
+
+    if (wait) {
+        time_chasing += dt;
+        wait = time_chasing <= temps_wait;
+        return;
+    }
 
     if (norm(char_pos - (center + rel_position)) >= 2.f)
         hide = true;
@@ -293,6 +308,15 @@ void bobomb_structure::move_black(const vcl::vec3& char_pos, float t, float dt)
         time_chasing += dt;
         if (time_chasing > .3f) {
             exploding = false;
+            fire = true;
+            time_chasing = 0.f;
+        }
+    }
+    else if (fire) {
+        time_chasing += dt;
+        if (time_chasing >= temps_fire) {
+            fire = false;
+            time_chasing = 0.f;
             center = original_pos;
             rel_position = { 0, 0, 0 };
         }
@@ -438,7 +462,7 @@ void bobombs_structure::draw_nobillboards(std::map<std::string, GLuint>& shaders
     // Black bobombs
 
     for (auto i = bobombs.begin(); i != bobombs.end(); i++) {
-        if (!i->rushing && !i->exploding && i->hide) continue;
+        if ((!i->rushing && !i->exploding && i->hide) || i->wait || i->fire) continue;
         
         mat3 R_pied_droit = rotation_from_axis_angle_mat3({ 1, 0, 0 }, i->ampl * std::sin(i->w * t));
         mat3 R_pied_gauche = rotation_from_axis_angle_mat3({ 1, 0, 0 }, i->ampl * std::sin(i->w * t - PI));
@@ -484,7 +508,7 @@ void bobombs_structure::draw_billboards(std::map<std::string, GLuint>& shaders, 
     glBindTexture(GL_TEXTURE_2D, texture_corps);
 
     for (auto i = bobombs.begin(); i != bobombs.end(); i++) {
-        if (!i->rushing && !i->exploding && i->hide) continue;
+        if ((!i->rushing && !i->exploding && i->hide) || i->wait || i->fire) continue;
 
         hierarchy["Super_Global"].transform.scaling = (i->exploding) ? 1.f + .5f * i->time_chasing / .3f : 1.f;
         hierarchy["Global"].transform.rotation = rotation_from_axis_angle_mat3({ 0,0,1 }, i->angle + PI / 2);
@@ -496,10 +520,42 @@ void bobombs_structure::draw_billboards(std::map<std::string, GLuint>& shaders, 
         draw_part_nogl("Corps", shaders, scene, bb, wf);
     }
 
+    glBindTexture(GL_TEXTURE_2D, texture_fumee);
+
+    for (auto i = bobombs.begin(); i != bobombs.end(); i++) {
+        if (!i->rushing) continue;
+
+        fumee.uniform.transform.scaling = i->radius_boulon * ( 1 + 2 * (10 * i->time_chasing / temps_explode - floor(10 * i->time_chasing / temps_explode)));
+        fumee.uniform.transform.rotation = R * rotation_from_axis_angle_mat3({ 0, 1, 0 }, 24 * PI * i->time_chasing / temps_explode);
+        fumee.uniform.transform.translation = i->get_position();
+        fumee.uniform.transform.translation.z += height_pied + cote_corps + height_boulon + (10 * i->time_chasing / temps_explode - floor(10 * i->time_chasing / temps_explode)) * .05f;
+
+        if (bb) draw(fumee, scene.camera, shaders["mesh"]);
+        if (wf) draw(fumee, scene.camera, shaders["wireframe"]);
+    }
+
+    int frame;
+
+    for (auto i = bobombs.begin(); i != bobombs.end(); i++) {
+        if (!i->fire) continue;
+
+        frame = floor(i->time_chasing / temps_fire * frame_explosion);
+
+        glBindTexture(GL_TEXTURE_2D, textures_explosion[frame]);
+
+        vec3 dpos = scene.camera.camera_position() - i->get_position();
+        explosion.uniform.transform.scaling = 3 * i->cote_corps;
+        explosion.uniform.transform.rotation = rotation_from_axis_angle_mat3({ 0, 0, 1 }, PI) * rotation_from_axis_angle_mat3({ 0,0,1 }, atan2(dpos.y, dpos.x)) * mat3 { 0, 0, 1, 1, 0, 0, 0, 1, 0 } * rotation_from_axis_angle_mat3({ 1, 0, 0 }, -PI / 2.);
+        explosion.uniform.transform.translation = i->get_position();
+
+        if (bb) draw(explosion, scene.camera, shaders["mesh"]);
+        if (wf) draw(explosion, scene.camera, shaders["wireframe"]);
+    }
+
     glBindTexture(GL_TEXTURE_2D, texture_yeux);
 
     for (auto i = bobombs.begin(); i != bobombs.end(); i++) {
-        if (!i->rushing && !i->exploding && i->hide) continue;
+        if ((!i->rushing && !i->exploding && i->hide) || i->wait || i->fire) continue;
 
         hierarchy["Super_Global"].transform.scaling = (i->exploding) ? 1.f + .5f * i->time_chasing / .3f : 1.f;
         hierarchy["Global"].transform.rotation = rotation_from_axis_angle_mat3({ 0,0,1 }, i->angle + PI / 2);
