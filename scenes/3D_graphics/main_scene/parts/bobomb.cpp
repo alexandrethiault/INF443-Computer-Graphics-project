@@ -404,12 +404,10 @@ void bobomb_structure::move_pink(float t, float dt)
         rel_position.z += dt * vspeed;
     }
 
-    vec3 pied = vec3{ 0, 0, height_pied };
-
-    if (map->wall_collision(center + rel_position + pied, impact, normal, cote_corps / 2.f))
-        rel_position = impact + normal * cote_corps / 1.999f - (center + pied);
-    if (map->wall_collision(center + rel_position + pied, impact, normal, cote_corps / 2.f))
-        rel_position = impact + normal * cote_corps / 2.f - (center + pied);
+    if (map->wall_collision(center + rel_position + centre_corps, impact, normal, cote_corps / 2.f))
+        rel_position = impact + normal * cote_corps / 1.999f - (center + centre_corps);
+    if (map->wall_collision(center + rel_position + centre_corps, impact, normal, cote_corps / 2.f))
+        rel_position = impact + normal * cote_corps / 2.f - (center + centre_corps);
 }
 
 void bobomb_structure::keyboard_input(bool Z, bool W, bool D, bool S, bool A, bool Q, bool SPACE)
