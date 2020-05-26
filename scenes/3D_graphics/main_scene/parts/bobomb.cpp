@@ -316,6 +316,7 @@ void bobomb_structure::move_black(const vcl::vec3& char_pos, float t, float dt)
         time_chasing += dt;
         if (time_chasing >= temps_fire) {
             fire = false;
+            wait = true;
             time_chasing = 0.f;
             center = original_pos;
             rel_position = { 0, 0, 0 };
