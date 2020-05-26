@@ -312,7 +312,7 @@ void bobomb_structure::move_black(const vcl::vec3& char_pos, float t, float dt)
             time_chasing = 0.f;
         }
     }
-    else if (fire) {
+    else if (fire) { // explosion
         time_chasing += dt;
         if (time_chasing >= temps_fire) {
             fire = false;
@@ -425,9 +425,9 @@ void bobomb_structure::keyboard_input(bool Z, bool W, bool D, bool S, bool A, bo
         ampl = .4f;
     }
     if (A || Q)
-        angular_v = 3 * max_angular_velocity;
+        angular_v = (S ? -1 : 1) * 3 * max_angular_velocity;
     if (D)
-        angular_v = -3 * max_angular_velocity;
+        angular_v = (S ? 1 : -1) * 3 * max_angular_velocity;
     if (S) {
         hspeed = -2 * max_speed;
         w = 8 * PI;
