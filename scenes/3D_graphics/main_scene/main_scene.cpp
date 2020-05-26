@@ -28,7 +28,7 @@ void scene_model::setup_data(std::map<std::string,GLuint>& shaders, scene_struct
 
     bridge.setup(vec3{ -1.736f, 3.139f, 0.728f }, vec3{ -1.28f,-1.28f,0 }, vec3{ 0.256f,-0.256f,0 }, vec3{ 0,0,0.054f });
 
-    bubbles.setup(&map);
+    bubbles.setup(&map); // Pointer used for collisions
 
     bobombs.setup(&map, &bridge, { -2.045240f, -2.631043f, 3.087018f }); // Pointers used for collisions
 
@@ -44,13 +44,12 @@ void scene_model::frame_draw(std::map<std::string, GLuint>& shaders, scene_struc
 
     timer.update();
     const float t = timer.t;
-    const float dt = std::min(0.03f, timer_event.update());
+    const float dt = std::min(0.03f, ((t < last_t) ? timer.t_max - timer.t_min : 0) + t - last_t);
 
-    chomp.move(flight.p, t, ((t < last_t) ? timer.t_max - timer.t_min : 0) + t - last_t);
-    character.move(t, ((t < last_t) ? timer.t_max - timer.t_min : 0) + t - last_t);
-    bobombs.move(bobombs.pbobomb.get_position(), t, ((t < last_t) ? timer.t_max - timer.t_min : 0) + t - last_t);
+    chomp.move(flight.p, t, dt);
+    bobombs.move(bobombs.pbobomb.get_position(), t, dt);
     star.move(t);
-    bridge.move(t, ((t < last_t) ? timer.t_max - timer.t_min : 0) + t - last_t);
+    bridge.move(t, dt);
     bubbles.simulate(bobombs.pbobomb.get_position());
     flight.simulate(); // Moves the character to the current flight position
 
@@ -64,10 +63,10 @@ void scene_model::frame_draw(std::map<std::string, GLuint>& shaders, scene_struc
     }
 
     glEnable(GL_POLYGON_OFFSET_FILL); // avoids z-fighting when displaying wireframe
-    chomp.draw_nobillboards(shaders, scene, gui_scene.surface, gui_scene.wireframe);
+    chomp.draw_nobillboards(shaders, scene, gui_scene.surface, gui_scene.wireframe); // Body and mouth
     map.draw_nobillboards(shaders, scene, gui_scene.surface, gui_scene.wireframe); // Including sky and 5 posts
-    bobombs.draw_nobillboards(shaders, scene, gui_scene.surface, gui_scene.wireframe);
-    star.draw_nobillboards(shaders, scene, gui_scene.surface, gui_scene.wireframe); // 2 stars
+    bobombs.draw_nobillboards(shaders, scene, gui_scene.surface, gui_scene.wireframe); // Bolt and feet
+    star.draw_nobillboards(shaders, scene, gui_scene.surface, gui_scene.wireframe); // Stars
     flight.draw_path(shaders, scene, gui_scene.display_keyframe, gui_scene.display_polygon);
     bridge.draw_bridge(shaders, scene, gui_scene.surface, gui_scene.wireframe);
     if (gui_scene.bubbles) bubbles.draw_bubbles(shaders, scene, gui_scene.surface, gui_scene.wireframe);
@@ -78,11 +77,11 @@ void scene_model::frame_draw(std::map<std::string, GLuint>& shaders, scene_struc
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glDepthMask(false);
-    // étoiles puis grille du chomp puis chomp (chaine) puis reste de la map (arbres, pièces)
-    bobombs.draw_billboards(shaders, scene, gui_scene.surface, gui_scene.wireframe);
-    star.draw_billboards(shaders, scene, gui_scene.surface, gui_scene.wireframe); // Star eyes
+
+    bobombs.draw_billboards(shaders, scene, gui_scene.billboards, gui_scene.wireframe); // Body and eyes
+    star.draw_billboards(shaders, scene, gui_scene.billboards, gui_scene.wireframe); // Star eyes
     chomp.draw_billboards(shaders, scene, gui_scene.billboards, gui_scene.wireframe); // Eyes and chains
-    map.draw_billboards(shaders, scene, gui_scene.billboards, gui_scene.wireframe, ((int)(16 * t)) % 4); // 2 types of grids and 17 trees
+    map.draw_billboards(shaders, scene, gui_scene.billboards, gui_scene.wireframe, ((int)(16 * t)) % 4); // Grids and trees and coins
     glDepthMask(true);
     glBindTexture(GL_TEXTURE_2D, scene.texture_white);
 
@@ -101,13 +100,18 @@ void scene_model::mouse_move(scene_structure& scene, GLFWwindow* window)
     flight.mouse_move(scene, window);
 }
 
-// Press P to print the position of the center of the moving referential ("frame camera")
+
 void scene_model::keyboard_input(scene_structure& scene, GLFWwindow* window, int key, int scancode, int action, int mods)
 {
+    // Press P to print the position of the center of the moving referential ("frame camera")
     if (key == GLFW_KEY_P && action == GLFW_PRESS)
         std::cout << scene.frame_camera.uniform.transform.translation << std::endl;
 
-    bobombs.pbobomb.keyboard_input(glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS, glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS, glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS, glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS, glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS, glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS, glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS);
+    // Control pink bobomb with ZQSD or WASD + Space
+    bobombs.pbobomb.keyboard_input(glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS,
+        glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS, glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS,
+        glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS, glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS,
+        glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS, glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS);
 }
 
 void scene_model::set_gui(std::map<std::string, GLuint>& shaders, scene_structure& scene)
@@ -118,11 +122,11 @@ void scene_model::set_gui(std::map<std::string, GLuint>& shaders, scene_structur
     ImGui::Checkbox("Billboards", &gui_scene.billboards); ImGui::SameLine();
 
     ImGui::Spacing();
-    ImGui::SliderFloat("Time", &timer.t, timer.t_min, timer.t_max);
-    ImGui::SliderFloat("Time scale", &timer.scale, 0.01f, 3.0f);
+    //ImGui::SliderFloat("Time", &timer.t, timer.t_min, timer.t_max);
+    //ImGui::SliderFloat("Time scale", &timer.scale, 0.01f, 3.0f);
 
     ImGui::Checkbox("Mario", &gui_scene.mario); ImGui::SameLine();
-    ImGui::Checkbox("Lock camera on pink bobomb", &gui_scene.lock_on_pbobomb); ImGui::SameLine();
+    ImGui::Checkbox("Camera on pink bobomb", &gui_scene.lock_on_pbobomb); ImGui::SameLine();
     ImGui::Checkbox("Third person camera", &gui_scene.auto_orientation);
     ImGui::Checkbox("Keyframes", &gui_scene.display_keyframe); ImGui::SameLine();
     ImGui::Checkbox("Polygon", &gui_scene.display_polygon); ImGui::SameLine();
@@ -131,7 +135,7 @@ void scene_model::set_gui(std::map<std::string, GLuint>& shaders, scene_structur
     ImGui::SliderFloat("Mario's time", &flight.timer.t, flight.timer.t_min, flight.timer.t_max);
     ImGui::SliderFloat("Mario timer scale", &flight.timer.scale, 0.01f, 3.0f);
 
-    ImGui::SliderFloat("Bubbles time scale", &bubbles.timerevent.scale, 0.01f, 3.0f);
+    //ImGui::SliderFloat("Bubbles time scale", &bubbles.timerevent.scale, 0.01f, 3.0f);
     if (ImGui::Button("Stop bubbles")) bubbles.timerevent.stop(); ImGui::SameLine();
     if (ImGui::Button("Restart bubbles")) bubbles.timerevent.start(); ImGui::SameLine();
     if (ImGui::Button("Print Keyframe")) {

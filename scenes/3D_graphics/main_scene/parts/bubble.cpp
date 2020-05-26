@@ -10,12 +10,23 @@ using namespace vcl;
 std::default_random_engine generator_bubbles;
 std::uniform_real_distribution<float> distrib_bubbles(0.0f,1.0f);
 
+bubble_structure::bubble_structure() {}
+
+bubble_structure::bubble_structure(vec3 p, vec3 v)
+{
+    this->p = p; this->v = v;
+}
+
+void bubble_structure::squish_tranformation(mesh_drawable& sphere, float bubble_radius)
+{
+    sphere.uniform.transform.scaling_axis = { std::sqrt(1/(1 - squish)), std::sqrt(1 / (1 - squish)), 1 - squish };
+    sphere.uniform.transform.translation = p - bubble_radius * vcl::vec3{ 0,0, squish };
+}
+
 void bubbles_structure::setup(map_structure* map_)
 {
-    active = false;
-
-    // Create mesh for particles represented as spheres
     radius = 0.1f;
+
     mesh _sphere = mesh_primitive_sphere(radius);
     for (vec2& uv : _sphere.texture_uv) uv = { uv.y, uv.x };
     sphere = _sphere;
@@ -24,7 +35,7 @@ void bubbles_structure::setup(map_structure* map_)
     map = map_;
 
     // Delay between emission of a new particles
-    timerevent.periodic_event_time_step = 5;
+    timerevent.periodic_event_time_step = 6;
 
     texture_bubble = create_texture_gpu(image_load_png("scenes/shared_assets/textures/bubble.png"));
 }
@@ -45,11 +56,11 @@ void bubbles_structure::simulate(vec3& target) {
     const float dt = timerevent.update();
 
     // Emission of new particle if needed
-    if (timerevent.event) {
+    if (timerevent.event && !active) {
         vec3 p0 = vec3{ 1.3f, 5.7f, 6.0f };
         vec3 v0 = vec3{ distrib_bubbles(generator_bubbles) - 0.5f, distrib_bubbles(generator_bubbles) - 0.5f, 0.0f } *8;
         if (norm((target - p0) * vec3 { 1, 1, 0 }) < 2) // target the pink bobomb
-            v0 = vec3{ target.x - p0.x, target.y - p0.y, 0.0 } * 1.85f;
+            v0 = vec3{ target.x - p0.x, target.y - p0.y, 0.0 } * 1.84f;
         bubble = bubble_structure(p0, v0);
         active = true;
     }
@@ -76,16 +87,16 @@ void bubbles_structure::simulate(vec3& target) {
                 bubble.p = impact + vec3{ 0,0,radius-0.01f };
                 bubble.squish_counter++;
                 bubble.squishing = true;
-                bubble.squish = 0.5f * dt;
+                bubble.squish = 0.7f * dt;
             }
             else if (bubble.squishing) {
-                bubble.squish += 0.7f * dt;
-                if (bubble.squish > 0.5f) {
-                    bubble.squish = 0.5f;
+                bubble.squish += (0.7f + 1.4f * (bubble.squish_counter == 3)) * dt; // Faster 3rd squish
+                if (bubble.squish > 0.5f + 0.3f * (bubble.squish_counter == 3)) { // Bigger 3rd squish
+                    bubble.squish = 0.5f + 0.3f * (bubble.squish_counter == 3);
                     bubble.squishing = false;
                     bubble.unsquishing = true;
                     if (bubble.squish_counter == 3)
-                        bubble.p.z = -10; // Will be properly deleted at the end of the iteration
+                        active = false; // Basically delete the bubble until a new one is created
                 }
             }
             else if (bubble.unsquishing) {
@@ -104,10 +115,6 @@ void bubbles_structure::simulate(vec3& target) {
             }
         }
     }
-
-    // Lazily remove particle that hit its 3rd rebound
-    if (active && bubble.p.z < -5)
-        active = false;
 }
 
 #endif

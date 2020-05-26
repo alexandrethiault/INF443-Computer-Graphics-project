@@ -11,87 +11,7 @@ using namespace vcl;
 
 const std::string map_dir = "scenes/shared_assets/models/Bob-omb";
 
-float triangle::ground_collision_depth = 0.3f;
-float triangle::ground_collision_stick = 0.01f;
-float triangle::wall_collision_depth = 0.02f;
-
 shading_mesh shading = { 0.7f,0.5f,0 };
-
-triangle::triangle(vec3& p1, vec3& p2, vec3& p3, vec3& fakenormal)
-{
-    this->p1 = p1;
-    this->p2 = p2;
-    this->p3 = p3;
-    this->n = normalize(cross(p2 - p1, p3 - p1));
-    if (dot(fakenormal, n) < 0) {
-        std::swap(this->p2, this->p3);
-        n = -n;
-    }
-    this->d = dot(p1, n); // d = ax+by+cz
-}
-
-// https://www.youtube.com/watch?v=UnU7DJXiMAQ
-bool triangle::collision(vec3 position, vec3& impact, vec3& normal, float margin)
-{
-    if (n.z >= 0.3f) { // Triangle is considered ground, hitboxes are vertical
-        impact.x = position.x;
-        impact.y = position.y;
-        impact.z = (d - impact.x * n.x - impact.y * n.y) / n.z;
-        float distance_to_plane = position.z - impact.z;
-        if (distance_to_plane < -ground_collision_depth || distance_to_plane > ground_collision_stick) return false;
-        normal = n;
-        return (cross(p2 - p1, impact - p1).z > 0 && cross(p3 - p2, impact - p2).z > 0 && cross(p1 - p3, impact - p3).z > 0);
-    }
-    else if (n.z > -0.01f) { // Triangle is considered wall (I chose to classify steep ground as walls)
-        float distance_to_plane = dot(position, n) - d;
-        if (distance_to_plane < -wall_collision_depth || distance_to_plane > margin) return false;
-        impact = position - distance_to_plane * n;
-        normal = n;
-        return (dot(cross(p2 - p1, impact - p1), n) > 0 && dot(cross(p3 - p2, impact - p2), n) > 0 && dot(cross(p1 - p3, impact - p3), n) > 0);
-    }
-    else { // Triangle is considered ceiling
-        impact.x = position.x;
-        impact.y = position.y;
-        impact.z = (d - impact.x * n.x - impact.y * n.y) / n.z;
-        float distance_to_plane = position.z - impact.z;
-        if (distance_to_plane < -margin || distance_to_plane > 0) return false;
-        normal = n;
-        return (cross(p2 - p1, impact - p1).z < 0 && cross(p3 - p2, impact - p2).z < 0 && cross(p1 - p3, impact - p3).z < 0);
-    }
-    
-}
-
-float side(vec3& p1, vec3& p2, vec3& p3) {
-    return (p1.x - p3.x) * (p2.y - p3.y) - (p2.x - p3.x) * (p1.y - p3.y);
-}
-
-float map_structure::get_z(vcl::vec3 position) {
-    int i = static_cast<int>((position.x - minx) / (maxx - minx) * grid_size);
-    int j = static_cast<int>((position.y - miny) / (maxy - miny) * grid_size);
-    if (i >= grid_size || i < 0 || j >= grid_size || j < 0)
-        return -10.f;
-
-    float d1, d2, d3;
-    bool has_neg, has_pos;
-    float nearest = -1000.f, z;
-
-    for (triangle* triptr : grid(i, j))
-        if (triptr->n.z > 0.3f) {
-            d1 = side(position, triptr->p1, triptr->p2);
-            d2 = side(position, triptr->p2, triptr->p3);
-            d3 = side(position, triptr->p3, triptr->p1);
-
-            has_neg = (d1 < 0) || (d2 < 0) || (d3 < 0);
-            has_pos = (d1 > 0) || (d2 > 0) || (d3 > 0);
-
-            z = triptr->p1.z - (triptr->n.x * (position.x - triptr->p1.x) + triptr->n.y * (position.y - triptr->p1.y)) / triptr->n.z;
-
-            if (!(has_neg && has_pos) && abs(nearest - position.z) > abs(z - position.z))
-                nearest = z;
-        }
-
-    return nearest;
-}
 
 void map_structure::init(const char* MTLpath, const char* OBJpath, character_structure* _character)
 {
@@ -179,11 +99,6 @@ void map_structure::other_objects()
     red_block_positions.resize(n);
     for (int i = 0; i < n; i++)
         blocks >> red_block_positions[i].x >> red_block_positions[i].y >> red_block_positions[i].z;
-
-
-    //mesh _lift;
-    //mesh _lift_side;
-
 }
 
 bool map_structure::ground_collision(vcl::vec3 position, vcl::vec3& impact, vcl::vec3& normal)

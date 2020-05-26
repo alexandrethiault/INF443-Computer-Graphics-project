@@ -22,7 +22,6 @@ struct bobomb_structure
     float radius_boulon = 0.f, height_boulon = 0.f, cote_corps = 0.f, height_pied = 0.f, height_yeux = 0.f, radius_reach = 0.f, scaling = 0.f;
     float max_angular_velocity = 0.f, max_speed = 0.f, temps_explode = 0.f, temps_wait = 0.f, temps_fire = 0.f;
     vcl::vec3 centre_corps;
-    //vcl::hierarchy_mesh_drawable* hierarchy; // This one is expensive to copy so it's a pointer
     map_structure* map = nullptr;
     bridge_structure* bridge = nullptr;
 

@@ -101,11 +101,8 @@ void character_structure::init(const vec3& center)
 
 void character_structure::draw(std::map<std::string, GLuint>& shaders, scene_structure& scene, bool surf, bool wf)
 {
-    // dessiner toutes les parties qui ne sont pas des billboards
-    // copi� coll� de ce que j'ai fait pour le chomp
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); // avoids sampling artifacts
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE); // avoids sampling artifacts
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     
     for (int i = 0; i < (int)part_name.size(); i++) {
         if (mario_textures[texture_indices[i]] == -1) {
@@ -123,14 +120,8 @@ void character_structure::draw(std::map<std::string, GLuint>& shaders, scene_str
     glBindTexture(GL_TEXTURE_2D, scene.texture_white);
 }
 
-void character_structure::move(float t, float dt)
-{
-    if (dt > 0.1f) dt = 0.1f;
-}
-
 vec3 character_structure::get_translation()
 {
-    //return vec3{ 1.900440f, - 3.768835f, 3.318513f };
     return hierarchy["Corps"].transform.translation;
 }
 

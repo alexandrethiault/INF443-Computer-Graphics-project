@@ -85,9 +85,8 @@ void flight_model::simulate()
 }
 
 void flight_model::draw_path(std::map<std::string, GLuint>& shaders, scene_structure& scene, bool kf, bool pg)
-    {
+{
     glBindTexture(GL_TEXTURE_2D, scene.texture_white);
-    //draw(point_visual, scene.camera); // à remplacer par Mario
 
     // Draw moving point trajectory
     if (pg) trajectory.draw(shaders["curve"], scene.camera);

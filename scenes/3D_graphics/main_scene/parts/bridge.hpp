@@ -1,8 +1,7 @@
 #pragma once
 
 #include "main/scene_base/base.hpp"
-#include "scenes/3D_graphics/main_scene/parts/map.hpp"
-// importer la classe triangle dans un fichier hpp à part qui lui serait propre serait mieux
+#include "scenes/3D_graphics/main_scene/parts/triangle.hpp"
 
 #ifdef MAIN_SCENE
 

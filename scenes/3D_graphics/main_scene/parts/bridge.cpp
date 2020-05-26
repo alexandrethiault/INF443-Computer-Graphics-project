@@ -1,8 +1,6 @@
 
 #include "bridge.hpp"
 
-// AVANCEMENT : le mouvement sinusoidal est le seul truc qui est fait. Même la modélisation reste à faire
-
 #ifdef MAIN_SCENE
 
 using namespace vcl;

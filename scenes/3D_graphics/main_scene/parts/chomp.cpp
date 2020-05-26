@@ -37,7 +37,7 @@ mesh mesh_primitive_half_sphere(float radius, const vec3& p0, size_t Nu, size_t 
     return shape;
 }
 
-// demi cercle regardant vers dx, d'extrêmité dy, centré en p0
+// Semi circle staring towards dx, on a (dx,dy) plane, centered on p0
 mesh mesh_primitive_half_disc(float radius, const vec3& p0, const vec3& dx, const vec3& dy, size_t N)
 {
     mesh disc;
@@ -212,7 +212,7 @@ void chomp_structure::move(const vcl::vec3& char_pos, float t, float dt)
             rel_position /= norm(rel_position) / radius_reach;
             rushing = false;
             falling = true;
-            time_chasing = 0.0f; // utilisé ici comme un "time_falling"
+            time_chasing = 0.0f; // Used here as if it was a "time_falling"
             speed = 0.0f;
         }
     }

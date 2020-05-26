@@ -538,7 +538,7 @@ void bobombs_structure::draw_billboards(std::map<std::string, GLuint>& shaders, 
     for (auto i = bobombs.begin(); i != bobombs.end(); i++) {
         if (!i->fire) continue;
 
-        frame = floor(i->time_chasing / temps_fire * frame_explosion);
+        frame = static_cast<int>(floor(i->time_chasing / temps_fire * frame_explosion));
 
         glBindTexture(GL_TEXTURE_2D, textures_explosion[frame]);
 
