@@ -11,12 +11,12 @@ struct character_structure
     vcl::vec3 center;
     vcl::hierarchy_mesh_drawable hierarchy;
 
-    void init(const vcl::vec3& center);
+    void init(const vcl::vec3 _center);
     void draw(std::map<std::string, GLuint>& shaders, scene_structure& scene, bool surf, bool wf);
     int find_mesh_index(std::string name);
     vcl::vec3 get_translation();
-    void set_translation(vcl::vec3& p);
-    void set_rotation(vcl::mat3& R);
+    void set_translation(vcl::vec3 p);
+    void set_rotation(vcl::mat3 R);
 
     void loadMTL(const char* path);
     void loadOBJ(const char* path);

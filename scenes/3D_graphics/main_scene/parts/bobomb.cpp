@@ -235,7 +235,7 @@ void bobombs_structure::setup(map_structure* _map, bridge_structure* _bridge, ve
     pbobomb.init(pink_position, this, true);
 }
 
-void bobomb_structure::init(const vec3& _center, bobombs_structure* bobombs, bool is_pink)
+void bobomb_structure::init(const vec3 _center, bobombs_structure* bobombs, bool is_pink)
 {
     if (radius_boulon) {
         std::cout << "Tentative de re-initialiser une bobomb deja initialisee." << std::endl;
@@ -272,7 +272,7 @@ vcl::vec3 bobomb_structure::get_position() {
 
 // MOVEMENTS / INTERACTION
 
-void bobomb_structure::move_black(const vcl::vec3& char_pos, float t, float dt)
+void bobomb_structure::move_black(const vcl::vec3 char_pos, float dt)
 {
     if (dt > 0.1f) dt = 0.1f;
 
@@ -328,7 +328,7 @@ void bobomb_structure::move_black(const vcl::vec3& char_pos, float t, float dt)
         time_chasing += dt;
         float da = atan2(char_pos.y - (center + rel_position).y, char_pos.x - (center + rel_position).x) - angle;
         angle += da;
-        rel_position += dt * vec3{ hspeed * cos(angle), hspeed * sin(angle), 0 };
+        rel_position += dt * vec3{ hspeed * std::cos(angle), hspeed * std::sin(angle), 0 };
         if (time_chasing > .01f) {
             rushing = true;
             time_chasing = 0.0f;
@@ -348,7 +348,7 @@ void bobomb_structure::move_black(const vcl::vec3& char_pos, float t, float dt)
             if (distribb(generatorb) * 4 < 3) hspeed = max_speed / 7.f;
             else hspeed = 0;
         }
-        rel_position += dt * vec3{ hspeed * cos(angle), hspeed * sin(angle), 0 };
+        rel_position += dt * vec3{ hspeed * std::cos(angle), hspeed * std::sin(angle), 0 };
     }
 
     //float z_floor = map->get_z(center + rel_position);
@@ -372,7 +372,7 @@ void bobomb_structure::move_black(const vcl::vec3& char_pos, float t, float dt)
         rel_position = impact + normal * cote_corps / 2.f - (center + centre_corps);
 }
 
-void bobomb_structure::move_pink(float t, float dt)
+void bobomb_structure::move_pink(float dt)
 {
     assert(is_pink);
     if (dt > 0.1f) dt = 0.1f;
@@ -432,22 +432,23 @@ void bobomb_structure::keyboard_input(bool Z, bool W, bool D, bool S, bool A, bo
         ampl = .4f;
     }
     if (SPACE) {
+        rel_position.z += .01f;
         vspeed = 3 * max_speed;
         w = 16 * PI;
         ampl = .1f;
     }
 }
 
-void bobombs_structure::move(const vcl::vec3& char_pos, float t, float dt) {
+void bobombs_structure::move(const vcl::vec3 char_pos, float t, float dt) {
     this->t = t;
     for (auto i = bobombs.begin(); i != bobombs.end(); i++)
-        i->move_black(char_pos, t, dt);
-    pbobomb.move_pink(t, dt);
+        i->move_black(char_pos, dt);
+    pbobomb.move_pink(dt);
 }
 
 /// DRAWING
 
-bool cmpbillboard(vec3& u, vec3& v, vec3& cam_pos) {
+bool cmpbillboard(vec3 u, vec3 v, vec3 cam_pos) {
     return (norm(u - cam_pos) > norm(v - cam_pos));
 }
 

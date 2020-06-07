@@ -13,8 +13,8 @@ void star_structure::create_star()
     const float inner = 0.5f;
     const float PI = 3.14159f;
     for (size_t ku = 0; ku < 5; ++ku) {
-        _star.position[ku] = { cos(2 * PI * (4 * ku + 1) / 20), 0, sin(2 * PI * (4 * ku + 1) / 20) };
-        _star.position[ku + 5] = { inner * cos(2 * PI * (4 * ku + 3) / 20), 0, inner * sin(2 * PI * (4 * ku + 3) / 20) };
+        _star.position[ku] = { std::cos(2 * PI * (4 * ku + 1) / 20.f), 0, std::sin(2 * PI * (4 * ku + 1) / 20.f) };
+        _star.position[ku + 5] = { inner * std::cos(2 * PI * (4 * ku + 3) / 20.f), 0, inner * std::sin(2 * PI * (4 * ku + 3) / 20.f) };
         _star.texture_uv[ku] = { (1 - _star.position[ku].x * 1.5f) * 0.5f, (1 - _star.position[ku].z * 1.0f) * 0.5f };
         _star.texture_uv[ku + 5] = { (1 - _star.position[ku + 5].x * 1.5f) * 0.5f, (1 - _star.position[ku + 5].z * 1.0f) * 0.5f };
     } // 0, 5, 1, 6, 2, 7, 3, 8, 4, 9

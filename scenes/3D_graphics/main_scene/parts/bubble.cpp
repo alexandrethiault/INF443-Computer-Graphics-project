@@ -52,7 +52,7 @@ void bubbles_structure::draw_bubbles(std::map<std::string,GLuint>& shaders, scen
     }
 }
 
-void bubbles_structure::simulate(vec3& target) {
+void bubbles_structure::simulate(vec3 target) {
     const float dt = timerevent.update();
 
     // Emission of new particle if needed

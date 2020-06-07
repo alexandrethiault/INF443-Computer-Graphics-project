@@ -4,6 +4,9 @@
 CMakeSettings.json
 imgui.ini
 out/build/x64-Debug/*
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
 
 # Mais pas les textures, a recopier dans un dossier du build pour que pgm.exe les voie
 !out/build/x64-Debug/scenes/

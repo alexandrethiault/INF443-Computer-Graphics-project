@@ -7,7 +7,7 @@
 
 struct bridge_structure
 {
-    void setup(vcl::vec3& _center, vcl::vec3& len, vcl::vec3& wid, vcl::vec3& hei);
+    void setup(vcl::vec3 _center, vcl::vec3 len, vcl::vec3 wid, vcl::vec3 hei);
     void move(float t, float dt);
     void draw_bridge(std::map<std::string, GLuint>& shaders, scene_structure& scene, bool surf, bool wf);
 

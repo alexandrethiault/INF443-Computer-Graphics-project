@@ -143,7 +143,7 @@ void flight_model::mouse_click(scene_structure& scene, GLFWwindow* window)
         // Loop over all positions and get the closest intersected sphere if any
         picked_object = -1;
         float distance_min = 0.0f;
-        for (int k = 0; k < keyframes.size(); k++) {
+        for (size_t k = 0; k < keyframes.size(); k++) {
             const vec3 c = keyframes[k].p;
             const picking_info info = ray_intersect_sphere(r, c, 0.1f);
 

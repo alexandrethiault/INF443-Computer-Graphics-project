@@ -11,7 +11,7 @@ using namespace vcl;
 const std::string mario_dir = "scenes/shared_assets/models/Mario GU/";
 const float PI = 3.14159f;
 
-void character_structure::init(const vec3& center)
+void character_structure::init(const vec3 _center)
 {
     scale = 0.07f;
 
@@ -19,6 +19,8 @@ void character_structure::init(const vec3& center)
     vec3 pos;
     std::string name;
     std::fstream centres("scenes/shared_assets/coords/mario_centres.txt");
+
+    center = _center;
 
     centres >> n;
     for (int i = 0; i < n; i++) {
@@ -104,7 +106,7 @@ void character_structure::draw(std::map<std::string, GLuint>& shaders, scene_str
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     
-    for (int i = 0; i < (int)part_name.size(); i++) {
+    for (size_t i = 0; i < part_name.size(); i++) {
         if (mario_textures[texture_indices[i]] == -1) {
             glBindTexture(GL_TEXTURE_2D, scene.texture_white);
             hierarchy[part_name[i]].element.uniform.color = mario_mtl[texture_indices[i]].Kd;
@@ -125,13 +127,13 @@ vec3 character_structure::get_translation()
     return hierarchy["Corps"].transform.translation;
 }
 
-void character_structure::set_translation(vcl::vec3& p)
+void character_structure::set_translation(vcl::vec3 p)
 {
     hierarchy["Corps"].transform.translation = p;
     hierarchy.update_local_to_global_coordinates();
 }
 
-void character_structure::set_rotation(vcl::mat3& R)
+void character_structure::set_rotation(vcl::mat3 R)
 {
     hierarchy["Corps"].transform.rotation = R * rotation_from_axis_angle_mat3({0, 1, 0}, PI/2.);
     hierarchy.update_local_to_global_coordinates();
@@ -139,7 +141,7 @@ void character_structure::set_rotation(vcl::mat3& R)
 
 int character_structure::find_mesh_index(std::string name)
 {
-    int i = 0;
+    unsigned int i = 0;
     while(i < part_name.size() && part_name[i] != name)
         i++;
     return i;

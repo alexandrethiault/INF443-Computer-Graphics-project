@@ -13,10 +13,10 @@ struct chomp_structure
     vcl::mesh_drawable chain;
     GLuint texture_up, texture_down, texture_tongue, texture_eye, texture_tooth, texture_chain;
 
-    void init(const vcl::vec3& _center);
+    void init(const vcl::vec3 _center);
     void draw_nobillboards(std::map<std::string, GLuint>& shaders, scene_structure& scene, bool surf, bool wf);
     void draw_billboards(std::map<std::string, GLuint>& shaders, scene_structure& scene, bool bb, bool wf);
-    void move(const vcl::vec3& char_pos, float t, float dt);
+    void move(const vcl::vec3 char_pos, float t, float dt);
 };
 
 #endif

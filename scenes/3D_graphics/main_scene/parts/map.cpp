@@ -4,6 +4,7 @@
 #include <random>
 #include <fstream>
 #include <string>
+#include <algorithm>
 
 #ifdef MAIN_SCENE
 
@@ -105,7 +106,7 @@ bool map_structure::ground_collision(vcl::vec3 position, vcl::vec3& impact, vcl:
 {
     int i = static_cast<int>((position.x - minx) / (maxx - minx) * grid_size);
     int j = static_cast<int>((position.y - miny) / (maxy - miny) * grid_size);
-    if (i >= grid_size || i < 0 || j >= grid_size || j < 0)
+    if (i < 0 || j < 0 || (unsigned) i >= grid_size || (unsigned) j >= grid_size)
         return false;
     for (triangle* triptr : grid(i, j))
         if (triptr->n.z > 0.3f && triptr->collision(position, impact, normal))
@@ -117,7 +118,7 @@ bool map_structure::wall_collision(vcl::vec3 position, vcl::vec3& impact, vcl::v
 {
     int i = static_cast<int>((position.x - minx) / (maxx - minx) * grid_size);
     int j = static_cast<int>((position.y - miny) / (maxy - miny) * grid_size);
-    if (i >= grid_size || i < 0 || j >= grid_size || j < 0)
+    if (i < 0 || j < 0 || (unsigned) i >= grid_size || (unsigned) j >= grid_size)
         return false;
     for (triangle* triptr : grid(i, j))
         if (triptr->n.z <= 0.3f && triptr->n.z > -0.01f && triptr->collision(position, impact, normal, margin))
@@ -129,7 +130,7 @@ bool map_structure::ceiling_collision(vcl::vec3 position, vcl::vec3& impact, vcl
 {
     int i = static_cast<int>((position.x - minx) / (maxx - minx) * grid_size);
     int j = static_cast<int>((position.y - miny) / (maxy - miny) * grid_size);
-    if (i >= grid_size || i < 0 || j >= grid_size || j < 0)
+    if (i < 0 || j < 0 || (unsigned) i >= grid_size || (unsigned) j >= grid_size)
         return false;
     for (triangle* triptr : grid(i, j))
         if (triptr->n.z <= -0.01f && triptr->collision(position, impact, normal, margin))
@@ -280,7 +281,7 @@ void map_structure::loadOBJ(const char* path)
     maxy += triangle::ground_collision_depth;
     minx -= triangle::ground_collision_depth;
     miny -= triangle::ground_collision_depth;
-    int ind = 0;
+    
     for (triangle& tri : map_triangle) {
         int mini = static_cast<int>(grid_size), minj = static_cast<int>(grid_size), maxi = 0, maxj = 0, i, j;
         for (vec3 p : {tri.p1, tri.p2, tri.p3}) {
@@ -292,8 +293,8 @@ void map_structure::loadOBJ(const char* path)
             maxj = std::max(maxj, j);
             i = static_cast<int>((p.x - triangle::ground_collision_depth * tri.n.x - minx) / (maxx - minx) * grid_size);
             j = static_cast<int>((p.y - triangle::ground_collision_depth * tri.n.y - miny) / (maxy - miny) * grid_size);
-            if (i == grid_size) i--;
-            if (j == grid_size) j--;
+            if ((unsigned) i == grid_size) i--;
+            if ((unsigned) j == grid_size) j--;
             mini = std::min(mini, i);
             minj = std::min(minj, j);
             maxi = std::max(maxi, i);
@@ -354,7 +355,7 @@ void map_structure::draw_nobillboards(std::map<std::string, GLuint>& shaders, sc
     glBindTexture(GL_TEXTURE_2D, scene.texture_white);
 }
 
-bool cmpbillboard(std::pair<vec3, std::pair<GLuint, bool> >& u, std::pair<vec3, std::pair<GLuint, bool> >& v, vec3& cam_pos)
+bool cmpbillboard(std::pair<vec3, std::pair<GLuint, bool> > u, std::pair<vec3, std::pair<GLuint, bool> > v, vec3 cam_pos)
 {
     return (norm(u.first - cam_pos) > norm(v.first - cam_pos));
 }

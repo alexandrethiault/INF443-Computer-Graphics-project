@@ -9,7 +9,7 @@ float triangle::ground_collision_depth = 0.3f;
 float triangle::ground_collision_stick = 0.01f;
 float triangle::wall_collision_depth = 0.02f;
 
-triangle::triangle(vec3& p1, vec3& p2, vec3& p3, vec3& fakenormal)
+triangle::triangle(vec3 p1, vec3 p2, vec3 p3, vec3 fakenormal)
 {
     this->p1 = p1;
     this->p2 = p2;

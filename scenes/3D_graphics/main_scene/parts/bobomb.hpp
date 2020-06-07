@@ -25,11 +25,11 @@ struct bobomb_structure
     map_structure* map = nullptr;
     bridge_structure* bridge = nullptr;
 
-    void init(const vcl::vec3& _center, bobombs_structure* bobombs, bool is_pink);
+    void init(const vcl::vec3 _center, bobombs_structure* bobombs, bool is_pink);
     vcl::vec3 get_position();
 
-    void move_black(const vcl::vec3& char_pos, float t, float dt);
-    void move_pink(float t, float dt);
+    void move_black(const vcl::vec3 char_pos, float dt);
+    void move_pink(float dt);
     void keyboard_input(bool Z, bool W, bool D, bool S, bool A, bool Q, bool SPACE);
 };
 
@@ -53,7 +53,7 @@ struct bobombs_structure
 
     void setup(map_structure* _map, bridge_structure* _bridge, vcl::vec3 pink_position);
 
-    void move(const vcl::vec3& char_pos, float t, float dt);
+    void move(const vcl::vec3 char_pos, float t, float dt);
 
     void draw_part_nogl(std::string name, std::map<std::string, GLuint>& shaders, scene_structure& scene, bool surfbb, bool wf);
     void draw_nobillboards(std::map<std::string, GLuint>& shaders, scene_structure& scene, bool surf, bool wf);

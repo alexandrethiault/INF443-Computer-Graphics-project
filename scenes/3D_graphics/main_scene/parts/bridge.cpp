@@ -5,7 +5,7 @@
 
 using namespace vcl;
 
-void bridge_structure::setup(vec3& _center, vec3& len, vec3& wid, vec3& hei)
+void bridge_structure::setup(vec3 _center, vec3 len, vec3 wid, vec3 hei)
 {
     center = _center;
     rotation_axis = wid;
@@ -63,7 +63,7 @@ void bridge_structure::move(float t, float dt)
     
     sigma = 0.0f; // To be recomputed next time
 
-    // Debug : faire peser un objet de manière permanente à gauche
+    // Debug : faire peser un objet de maniï¿½re permanente ï¿½ gauche
     // vec3 impact, normal;
     // ground_collision(R*vec3{ 0.63f,0.63f,0 }+center, impact, normal);
 }

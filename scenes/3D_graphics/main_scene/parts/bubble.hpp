@@ -23,7 +23,7 @@ struct bubbles_structure
 {
     void setup(map_structure* map_);
     void draw_bubbles(std::map<std::string,GLuint>& shaders, scene_structure& scene, bool surf, bool wf);
-    void simulate(vcl::vec3& target);
+    void simulate(vcl::vec3 target);
 
     bool active = false;
     float radius = 0.0f;

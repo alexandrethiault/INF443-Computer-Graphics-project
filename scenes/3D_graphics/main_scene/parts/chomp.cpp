@@ -69,7 +69,7 @@ mesh mesh_tooth(const vec3& p0, const vec3& p1, const vec3& p2)
     return tri;
 }
 
-void chomp_structure::init(const vec3& _center)
+void chomp_structure::init(const vec3 _center)
 {
     if (radius_chomp) {
         std::cout << "Tentative de re-initialiser un chomp deja initialise." << std::endl;
@@ -106,16 +106,16 @@ void chomp_structure::init(const vec3& _center)
 
     float theta = 5 * PI / 12;
     float phi = PI / 5;
-    vec3 left{ sin(theta) * cos(phi), -sin(theta) * sin(phi), cos(theta) };
-    vec3 right{ sin(theta) * cos(phi), sin(theta) * sin(phi), cos(theta) };
+    vec3 left{ std::sin(theta) * std::cos(phi), -std::sin(theta) * std::sin(phi), std::cos(theta) };
+    vec3 right{ std::sin(theta) * std::cos(phi), std::sin(theta) * std::sin(phi), std::cos(theta) };
     hierarchy.add(eye, "eye_left", "body_up", { radius_chomp * 0.98f * left, rotation_to_vector_mat3(left) });
     hierarchy.add(eye, "eye_right", "body_up", { radius_chomp * 0.98f * right, rotation_to_vector_mat3(right) });
 
-    vec3 head_m2 = radius_chomp * 0.975f * vec3{ cos(PI / 2), sin(-PI / 2), 0 };
-    vec3 head_m1 = radius_chomp * 0.975f * vec3{ cos(PI / 4), sin(-PI / 4), 0 };
+    vec3 head_m2 = radius_chomp * 0.975f * vec3{ std::cos(PI / 2), std::sin(-PI / 2), 0 };
+    vec3 head_m1 = radius_chomp * 0.975f * vec3{ std::cos(PI / 4), std::sin(-PI / 4), 0 };
     vec3 head_0 = { radius_chomp * 0.975f, 0, 0 };
-    vec3 head_p1 = radius_chomp * 0.975f * vec3{ cos(PI / 4), sin(PI / 4), 0 };
-    vec3 head_p2 = radius_chomp * 0.975f * vec3{ cos(PI / 2), sin(PI / 2), 0 };
+    vec3 head_p1 = radius_chomp * 0.975f * vec3{ std::cos(PI / 4), std::sin(PI / 4), 0 };
+    vec3 head_p2 = radius_chomp * 0.975f * vec3{ std::cos(PI / 2), std::sin(PI / 2), 0 };
     hierarchy.add(tooth, "tooth_up_1", "body_up", { (3 * head_m1 + 7 * head_0) / 10,  1.36f * rotation_from_axis_angle_mat3({0,0,1},-PI / 8) });
     hierarchy.add(tooth, "tooth_up_2", "body_up", { (8 * head_m1 + 2 * head_0) / 10,  0.88f * rotation_from_axis_angle_mat3({0,0,1},-PI / 8) });
     hierarchy.add(tooth, "tooth_up_3", "body_up", { (1 * head_m2 + 6 * head_m1) / 7,  0.63f * rotation_from_axis_angle_mat3({0,0,1},-3 * PI / 8) });
@@ -195,7 +195,7 @@ void chomp_structure::draw_billboards(std::map<std::string, GLuint>& shaders, sc
     glBindTexture(GL_TEXTURE_2D, scene.texture_white);
 }
 
-void chomp_structure::move(const vcl::vec3& char_pos, float t, float dt)
+void chomp_structure::move(const vcl::vec3 char_pos, float t, float dt)
 {
     if (dt > 0.1f) dt = 0.1f;
 
@@ -252,16 +252,18 @@ void chomp_structure::move(const vcl::vec3& char_pos, float t, float dt)
     }
     else { // Random movement on the plane
         time_chasing = 0.0f;
-        if (distrib(generator) < 0.01f)
+        if (distrib(generator) < 0.01f) {
             if (distrib(generator) * 3 < 1) angular_v = max_angular_velocity;
             else if (distrib(generator) * 2 < 1) angular_v = -max_angular_velocity;
             else angular_v = 0;
+        }
         angle += angular_v * dt;
 
-        if (distrib(generator) < 0.05f)
+        if (distrib(generator) < 0.05f) {
             if (distrib(generator) * 4 < 3) speed = max_speed;
             else speed = 0;
-        rel_position += dt * vec3{ speed * cos(angle), speed * sin(angle), 0 };
+        }
+        rel_position += dt * vec3{ speed * std::cos(angle), speed * std::sin(angle), 0 };
         if (norm(rel_position) > radius_reach) rel_position /= norm(rel_position) / radius_reach;
     }
 
