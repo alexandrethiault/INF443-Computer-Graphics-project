@@ -19,7 +19,7 @@ The majority of VCL structures and functions are aimed to be minimalistic withou
 
 The code contains two main parts:
 * The VCL library itself in `vcl/` directory - contains the helper functions and structures
-* The 3D scenes part of the Projet INF443 in `scenes/` directory. Each scene is fully defined in its subdirectory, and the switch between different scene is set using a keyword defined in `scene/current_scene.hpp` file. The main scenes are in the subdirectory `scenes/main_scene/` while the other subdirectories contain codes for smaller scenes that were used to design separate items independently. As such, those smaller scenes will often execute a single item from the final scenes, and the code for the main scenes is more or less a merge of the codes for the smaller scenes.
+* The 3D scenes part of the Projet INF443 in `scenes/` directory. This project consists in one unique scene in the directory `scenes/main_scene/`, divided into one main file `main_scene.hpp/cpp`, and auxiliary files in the subdirectory `scenes/main_scene/parts/`. Each feature of the main scene is implemented in a specific file from that subdirectory, and `main_scene.hpp/cpp` is here to centralize the calls to all the auxiliary functions.
 
 
 <a name="Compilation"></a>
@@ -32,7 +32,7 @@ The compilation can be done either using the provided
 * **CMakeLists.txt** using CMake (Linux/MacOS/Windows)
 
 
-The library has one external dependency: [GLFW](https://www.glfw.org/) which can be installed through standard packages in Linux/MacOS (see the provided detailed tutorials).
+The library has one external dependency: [GLFW](https://www.glfw.org/) which can be installed through standard packages in Linux/MacOS.
 
 
 * To set up your system and compile, or edit the code, see the README from [drohmer/inf443_vcl](https://github.com/drohmer/inf443_vcl)
